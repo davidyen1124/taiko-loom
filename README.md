@@ -1,39 +1,60 @@
 # Taiko Project
 
-This workspace contains two pieces:
+Taiko transforms uploaded MP3s into Taiko-drum-friendly note charts. The backend (FastAPI + `librosa`) analyzes audio, while the frontend (Vite + React) lets players preview charts and drum along from the browser.
 
-- `backend/`: FastAPI + `librosa` service that turns MP3 uploads into Taiko-friendly note charts.
-- `frontend/`: Vite + React experience where you upload a song, wait for analysis, and then drum along with your keyboard.
+## Repo Layout
+- `backend/` – FastAPI service in `src/taiko_backend/` (`audio.py`, `jobs.py`, `schemas.py`, `main.py`).
+- `frontend/` – Vite/React client in `src/` with `api.ts` handling HTTP calls and `App.tsx` rendering the lane.
+- `sample.mp3` – quick manual smoke-test track.
 
 ## Prerequisites
+- [`uv`](https://github.com/astral-sh/uv) (bundled in this repo’s tooling)
+- Python 3.11 (managed via `uv`)
+- Node.js 18+ and npm
+- FFmpeg available on your PATH for reliable MP3 decoding
 
-- `uv` (already in this repo’s tooling)
-- Node.js 18+
-- FFmpeg on your PATH for best MP3 decoding results
+## Quick Start
+1. **Backend**
+   ```bash
+   cd backend
+   uv python install 3.11      # first run
+   uv sync                     # installs dependencies into .venv
+   uv run fastapi dev taiko_backend.main:app --host 0.0.0.0 --port 8000
+   ```
+2. **Frontend**
+   ```bash
+   cd frontend
+   npm install
+   npm run dev                 # launches Vite on http://localhost:5173
+   ```
+3. (Optional) For production bundles: `npm run build` followed by `npm run preview`.
 
-## Backend
-
-```bash
-cd backend
-uv python install 3.11      # first-run only
-uv sync                     # install deps into .venv
-uv run fastapi dev taiko_backend.main:app --host 0.0.0.0 --port 8000
+Set `VITE_API_BASE_URL` in `frontend/.env.local` (or another Vite env file) if your backend is not on `http://localhost:8000`. Example:
+```
+VITE_API_BASE_URL=https://your-hosted-backend.example.com
 ```
 
-The API exposes `/charts` (POST upload) plus `/charts/{job}` for polling results. See `backend/README.md` for more detail.
+## Backend Service Highlights
+- `/charts` (POST multipart) accepts `file` plus optional `mode` (`balanced`, `dense`, `sparse`) and immediately returns a job id.
+- `/charts/{job}` (GET) lets the frontend poll for status/results.
+- Internals:
+  - `audio.py` performs beat detection with `librosa` and emits note metadata.
+  - `jobs.py` tracks asynchronous processing.
+  - `schemas.py` defines Pydantic models for request/response validation.
 
-## Frontend
+## Frontend App Highlights
+- `src/api.ts` centralizes all API calls and pulls `import.meta.env.VITE_API_BASE_URL`.
+- `App.tsx` renders the upload controls, status, and keyboard lane (`F/J` for red hits, `D/K` for blue hits).
+- Styling lives in `App.css` and `index.css`; assets go under `public/`.
+- Lint before committing: `npm run lint`.
 
-```bash
-cd frontend
-npm install
-npm run dev   # launches Vite on http://localhost:5173
-```
+## Manual Verification (No Automated Tests Yet)
+1. Run both services (`uv run fastapi dev ...` and `npm run dev`).
+2. Upload `sample.mp3` or a short clip (<30s) to keep iterations fast.
+3. Watch the request lifecycle in your devtools: initial `/charts` POST should yield a job id, followed by `/charts/{job}` polling until status is `done`.
+4. In the UI, confirm the rendered lane matches expectations across `balanced`, `dense`, and `sparse` modes. Capture screenshots or JSON snippets for PRs when behavior changes.
 
-Set `VITE_API_BASE_URL` in `frontend/.env` if your backend is not running on `http://localhost:8000`.
-
-Once both sides are up:
-
-1. Open the frontend, choose one of the chart density modes, and upload an MP3.
-2. The UI shows server status; when the chart is ready you’ll see note stats and an interactive lane.
-3. Press `F/J` for red (half/full) and `D/K` for blue (half/full) while the audio preview plays.
+## Contributing
+- Follow the Conventional Commits style used in Git history (`fix(frontend): derive preparedNotes from job payload`).
+- Document manual test coverage in PR descriptions (which track, which density mode).
+- Refer to `AGENTS.md` for contributor guidelines covering coding style, repo layout, and manual QA expectations.
