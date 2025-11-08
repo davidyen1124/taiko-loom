@@ -129,17 +129,14 @@ useEffect(() => {
     }
   };
 
-  const activeNotes = job?.payload?.notes ?? [];
-
-  const preparedNotes = useMemo(
-    () =>
-      activeNotes.map((note, idx) => ({
-        idx,
-        note,
-        absoluteOffset: note.time * LANE_PX_PER_SECOND,
-      })),
-    [activeNotes],
-  );
+  const preparedNotes = useMemo(() => {
+    const notes = job?.payload?.notes ?? [];
+    return notes.map((note, idx) => ({
+      idx,
+      note,
+      absoluteOffset: note.time * LANE_PX_PER_SECOND,
+    }));
+  }, [job?.payload?.notes]);
 
   const noteMarkers = useMemo(
     () =>
