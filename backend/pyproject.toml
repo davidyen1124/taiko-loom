@@ -5,7 +5,7 @@ description = "Taiko beat analysis service"
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
-    "fastapi>=0.115.0",
+    "fastapi[standard]>=0.115.0",
     "uvicorn[standard]>=0.30.3",
     "librosa>=0.10.2.post1",
     "numpy>=1.26.0",
