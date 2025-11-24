@@ -1,11 +1,13 @@
 # Taiko Loom
 
+![Taiko Loom gameplay preview](./demo.gif)
+
 Taiko Loom transforms uploaded MP3s into Taiko-drum-friendly note charts. The backend (FastAPI + `librosa`) analyzes audio, while the frontend (Vite + React) lets players preview charts and drum along from the browser.
 
 ## Repo Layout
 - `backend/` – FastAPI service in `src/taiko_backend/` (`audio.py`, `jobs.py`, `schemas.py`, `main.py`).
 - `frontend/` – Vite/React client in `src/` with `api.ts` handling HTTP calls and `App.tsx` rendering the lane.
-- `sample.mp3` – quick manual smoke-test track.
+- bring your own short MP3 clip for smoke tests (15–30s keeps iterations fast).
 
 ## Prerequisites
 - [`uv`](https://github.com/astral-sh/uv) (bundled in this repo’s tooling)
@@ -50,7 +52,7 @@ VITE_API_BASE_URL=https://your-hosted-backend.example.com
 
 ## Manual Verification (No Automated Tests Yet)
 1. Run both services (`uv run fastapi dev ...` and `npm run dev`).
-2. Upload `sample.mp3` or a short clip (<30s) to keep iterations fast.
+2. Upload a short MP3 clip (<30s) to keep iterations fast.
 3. Watch the request lifecycle in your devtools: initial `/audio` POST should yield a job id, followed by `/audio/{job}` polling until status is `done`.
 4. In the UI, confirm the rendered lane matches expectations across `balanced`, `dense`, and `sparse` modes. Capture screenshots or JSON snippets for PRs when behavior changes.
 
