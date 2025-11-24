@@ -7,14 +7,14 @@ from typing import Dict, Optional
 from uuid import uuid4
 
 from . import audio
-from .schemas import ChartMode, ChartPayload, JobResponse, JobStatus
+from .schemas import AudioPayload, JobResponse, JobStatus
 
 
 @dataclass
 class JobRecord:
     job_id: str
     status: JobStatus
-    payload: Optional[ChartPayload] = None
+    payload: Optional[AudioPayload] = None
     error: Optional[str] = None
     created_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
     updated_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
@@ -35,12 +35,12 @@ class JobStore:
         self._jobs: Dict[str, JobRecord] = {}
         self._lock = asyncio.Lock()
 
-    async def create_job(self, *, data: bytes, filename: str, mode: ChartMode) -> JobResponse:
+    async def create_job(self, *, data: bytes, filename: str) -> JobResponse:
         job_id = str(uuid4())
         record = JobRecord(job_id=job_id, status=JobStatus.QUEUED)
         async with self._lock:
             self._jobs[job_id] = record
-        asyncio.create_task(self._run_job(job_id, data, filename, mode))
+        asyncio.create_task(self._run_job(job_id, data, filename))
         return record.to_response()
 
     async def get_job(self, job_id: str) -> Optional[JobResponse]:
@@ -50,11 +50,11 @@ class JobStore:
             return None
         return record.to_response()
 
-    async def _run_job(self, job_id: str, data: bytes, filename: str, mode: ChartMode) -> None:
+    async def _run_job(self, job_id: str, data: bytes, filename: str) -> None:
         await self._set_status(job_id, JobStatus.PROCESSING)
         try:
-            result = await asyncio.to_thread(audio.analyze_audio_bytes, data, filename, mode=mode)
-            payload = audio.to_payload(result, mode=mode)
+            result = await asyncio.to_thread(audio.analyze_audio_bytes, data, filename)
+            payload = audio.to_payload(result)
             await self._set_result(job_id, payload)
         except Exception as exc:  # noqa: BLE001
             await self._set_error(job_id, str(exc))
@@ -66,7 +66,7 @@ class JobStore:
                 record.status = status
                 record.updated_at = datetime.now(timezone.utc)
 
-    async def _set_result(self, job_id: str, payload: ChartPayload) -> None:
+    async def _set_result(self, job_id: str, payload: AudioPayload) -> None:
         async with self._lock:
             record = self._jobs.get(job_id)
             if record:

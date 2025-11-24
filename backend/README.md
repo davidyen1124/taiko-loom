@@ -27,10 +27,10 @@ Endpoint summary:
 | Method | Path | Description |
 | ------ | ---- | ----------- |
 | `GET` | `/health` | Basic readiness probe |
-| `POST` | `/charts` | Accepts multipart upload (`file`) plus optional `mode` (`balanced`/`dense`/`sparse`). Returns a job id immediately while the analysis runs in the background. |
-| `GET` | `/charts/{job_id}` | Poll for job status. When finished, the payload contains beat times, Taiko notes, and helpful stats. |
+| `POST` | `/audio` | Accepts multipart upload (`file`) plus optional `mode` (`balanced`/`dense`/`sparse`). Returns a job id immediately while the analysis runs in the background. |
+| `GET` | `/audio/{job_id}` | Poll for job status. When finished, the payload contains beat times, Taiko notes, and helpful stats. |
 
-## How charting works
+## How audio analysis works
 
 1. MP3 is decoded with `librosa`.
 2. `beat_track` + spectral features derive tempo, beat timestamps, and energy/brightness envelopes.

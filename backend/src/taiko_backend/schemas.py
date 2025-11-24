@@ -16,12 +16,6 @@ NoteType = Literal[
 ]
 
 
-class ChartMode(str, Enum):
-    BALANCED = "balanced"
-    DENSE = "dense"
-    SPARSE = "sparse"
-
-
 class TaikoNote(BaseModel):
     time: float = Field(..., description="Timestamp of the hit in seconds from the start of the song.")
     note_type: NoteType = Field(..., description="One of red/blue combined with half/full weight.")
@@ -29,7 +23,7 @@ class TaikoNote(BaseModel):
     brightness: float = Field(..., ge=0.0, description="Normalized spectral centroid for the beat.")
 
 
-class ChartStats(BaseModel):
+class AudioStats(BaseModel):
     bpm: float
     duration: float
     total_beats: int
@@ -39,11 +33,10 @@ class ChartStats(BaseModel):
     blue_ratio: float
 
 
-class ChartPayload(BaseModel):
+class AudioPayload(BaseModel):
     notes: list[TaikoNote]
     beat_times: list[float]
-    stats: ChartStats
-    mode: ChartMode
+    stats: AudioStats
 
 
 class JobStatus(str, Enum):
@@ -58,7 +51,7 @@ class JobResponse(BaseModel):
     status: JobStatus
     created_at: datetime
     updated_at: datetime
-    payload: Optional[ChartPayload] = None
+    payload: Optional[AudioPayload] = None
     error: Optional[str] = None
 
     class Config:
