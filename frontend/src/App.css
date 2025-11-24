@@ -1,6 +1,9 @@
 @import url("https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600;700&display=swap");
 
 :root {
+  --shell-max-width: 1040px;
+  --shell-padding-x: clamp(1.5rem, 5vw, 4rem);
+  --shell-padding-y: clamp(1.5rem, 4vw, 3.5rem);
   font-family: "Space Grotesk", "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   color: #0f172a;
   background-color: #f4f6fb;
@@ -18,11 +21,13 @@ body {
   color: #0f172a;
   display: flex;
   flex-direction: column;
+  width: 100%;
 }
 
 #root {
   flex: 1;
   display: flex;
+  width: 100%;
 }
 
 * {
@@ -30,8 +35,9 @@ body {
 }
 
 .app-shell {
-  width: min(960px, 100%);
-  padding: clamp(1.5rem, 4vw, 4rem) clamp(1.5rem, 6vw, 5rem);
+  width: min(var(--shell-max-width), 100%);
+  max-width: var(--shell-max-width);
+  padding: var(--shell-padding-y) var(--shell-padding-x);
   min-height: 100%;
   display: flex;
   flex-direction: column;
@@ -48,6 +54,45 @@ body {
   margin-bottom: 1.5rem;
 }
 
+.app-header-play {
+  justify-content: flex-start;
+  margin-bottom: 1rem;
+}
+
+.app-header-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  width: 100%;
+  min-width: 0;
+}
+
+.back-button {
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border-radius: 12px;
+  border: 1px solid #dbe3ff;
+  background: #ffffff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #273a67;
+  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.08);
+  cursor: pointer;
+  transition: transform 120ms ease, box-shadow 120ms ease, border-color 120ms ease;
+}
+
+.back-button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 18px rgba(15, 23, 42, 0.12);
+  border-color: #b9c5ff;
+}
+
+.back-button svg {
+  stroke: currentColor;
+}
+
 .app-header h1 {
   margin: 0 0 0.3rem;
   font-size: 2rem;
@@ -56,6 +101,28 @@ body {
 .app-header p {
   margin: 0;
   color: #4f638c;
+}
+
+.brand-mark {
+  font-weight: 700;
+  color: #0f172a;
+  letter-spacing: -0.01em;
+}
+
+.header-divider {
+  width: 1px;
+  height: 22px;
+  background: #e2e8f0;
+}
+
+.track-title {
+  flex: 1;
+  min-width: 0;
+  font-weight: 600;
+  color: #31405a;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 /* layout */
@@ -69,6 +136,7 @@ body {
 
 .setup-card {
   width: 100%;
+  --dropzone-radius: 1rem;
 }
 
 .play-screen {
@@ -76,11 +144,6 @@ body {
   flex-direction: column;
   gap: 1.5rem;
   width: 100%;
-}
-
-.play-top {
-  display: flex;
-  justify-content: flex-end;
 }
 
 .play-panel {
@@ -110,24 +173,51 @@ body {
   padding: 0.75rem 1rem;
 }
 
-.transport button {
-  width: 48px;
-  height: 48px;
-  border-radius: 50%;
-  border: none;
-  background: linear-gradient(120deg, #818cf8, #f472b6);
-  color: white;
-  font-size: 1.2rem;
-  cursor: pointer;
-  flex-shrink: 0;
-  display: flex;
+.transport-button {
+  all: unset;
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  border: 1px solid #cbd5e1;
+  background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+  color: #0f172a;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
-  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 6px 16px rgba(15, 23, 42, 0.12);
+  flex-shrink: 0;
+  position: relative;
 }
 
-.transport button:active {
+.transport-button svg {
+  width: 20px;
+  height: 20px;
+}
+
+.transport-button:active {
   transform: scale(0.96);
+}
+
+.transport-button:hover {
+  box-shadow: 0 10px 20px rgba(15, 23, 42, 0.16);
+  border-color: #b9c5ff;
+}
+
+.transport-icon {
+  width: 18px;
+  height: 18px;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  border: 0;
 }
 
 .timeline {
@@ -168,21 +258,6 @@ body {
   box-shadow: 0 2px 4px rgba(15, 23, 42, 0.2);
 }
 
-.ghost-button {
-  border: 1px solid #cbd5f5;
-  background: transparent;
-  color: #1e293b;
-  padding: 0.6rem 1.25rem;
-  border-radius: 999px;
-  font-weight: 600;
-  cursor: pointer;
-}
-
-.ghost-button:hover {
-  border-color: #818cf8;
-  color: #111827;
-}
-
 .panel {
   background: #ffffff;
   border: 1px solid #e2e8f0;
@@ -200,7 +275,7 @@ body {
 
 .dropzone {
   border: 2px dashed rgba(15, 23, 42, 0.1);
-  border-radius: 1rem;
+  border-radius: var(--dropzone-radius, 1rem);
   padding: 2rem;
   display: flex;
   justify-content: center;
@@ -209,7 +284,7 @@ body {
   cursor: pointer;
   color: #1e293b;
   background: #f8fafc;
-  transition: border-color 0.2s ease, background 0.2s ease, transform 0.2s ease;
+  transition: border-color 0.2s ease, background 0.2s ease, transform 0.2s ease, opacity 0.2s ease;
 }
 
 .dropzone:hover {
@@ -218,40 +293,34 @@ body {
   transform: translateY(-2px);
 }
 
-.dropzone input {
-  display: none;
-}
-
-.mode-picker {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-  gap: 0.75rem;
-}
-
-.mode-picker label {
-  border: 1px solid rgba(15, 23, 42, 0.1);
-  border-radius: 0.75rem;
-  padding: 0.75rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-  cursor: pointer;
-  font-size: 0.9rem;
-  background: #f8fafc;
-}
-
-.mode-picker label.active {
+.dropzone.dragging {
   border-color: #6366f1;
   background: #eef2ff;
 }
 
-.mode-picker input {
+.dropzone[aria-disabled="true"] {
+  pointer-events: none;
+  cursor: not-allowed;
+  opacity: 0.65;
+  transform: none;
+}
+
+.dropzone input {
   display: none;
 }
 
-.mode-picker small {
-  color: #99aacf;
-  font-size: 0.75rem;
+.dropzone-label {
+  width: 100%;
+  max-width: 100%;
+  text-align: center;
+}
+
+.dropzone-label strong {
+  display: block;
+  max-width: 100%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 button {
@@ -265,24 +334,22 @@ button {
   font-size: 1rem;
 }
 
-button:disabled {
-  opacity: 0.6;
-  cursor: wait;
+.setup-card button {
+  border-radius: var(--dropzone-radius, 1rem);
 }
 
-.hint {
-  color: #475569;
-  margin: 0.5rem 0 0;
+button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+button:disabled[data-busy="true"] {
+  cursor: wait;
 }
 
 .error {
   color: #dc2626;
   margin: 0.5rem 0 0;
-}
-
-audio {
-  width: 100%;
-  margin: 1rem 0;
 }
 
 .note-track {
@@ -301,7 +368,8 @@ audio {
   top: 0;
   left: 50%;
   height: 100%;
-  transform: translateX(calc(-1 * var(--active-shift, 0px)));
+  transform: translate3d(calc(-1 * var(--active-shift, 0px)), 0, 0);
+  will-change: transform;
 }
 
 .note-track .playhead {
@@ -347,11 +415,6 @@ audio {
 
 .note.passed {
   opacity: 0.25;
-}
-
-.subtle {
-  color: #64748b;
-  margin: 0.3rem 0 0;
 }
 
 @media (max-width: 720px) {

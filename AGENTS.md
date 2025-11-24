@@ -1,7 +1,7 @@
-# Repository Guidelines
+# Taiko Loom Repository Guidelines
 
 ## Project Structure & Module Organization
-Mono-repo with `backend/` (FastAPI) and `frontend/` (Vite + React). Core API modules live in `backend/src/taiko_backend/` (`audio.py`, `jobs.py`, `schemas.py`, `main.py`); `sample.mp3` at the root aids manual tests. UI code sits in `frontend/src/` (`api.ts`, `App.tsx`) and static assets in `frontend/public/`.
+Mono-repo for Taiko Loom with `backend/` (FastAPI) and `frontend/` (Vite + React). Core API modules live in `backend/src/taiko_backend/` (`audio.py`, `jobs.py`, `schemas.py`, `main.py`); `sample.mp3` at the root aids manual tests. UI code sits in `frontend/src/` (`api.ts`, `App.tsx`) and static assets in `frontend/public/`.
 
 ## Build, Test, and Development Commands
 - `cd backend && uv python install 3.11 && uv sync` — bootstrap the Python toolchain (first run).
@@ -13,9 +13,10 @@ Mono-repo with `backend/` (FastAPI) and `frontend/` (Vite + React). Core API mod
 
 ## Coding Style & Naming Conventions
 Python modules use 4-space indentation, type hints, and snake_case functions. Keep Pydantic models in `schemas.py` singular (`ChartResponse`, etc.) and validate inputs at route boundaries. React components belong in PascalCase files (`App.tsx`), hooks/utilities in camelCase exports (`api.ts`), and styling centralized in `App.css`/`index.css`. Run `npm run lint` to enforce ESLint + TypeScript rules and model chart modes with explicit union types instead of loose strings.
+TypeScript: prefer `import type { … }` and named hooks (no default `React` import). Use `RefObject`, `FormEvent`, `DragEventHandler`, etc., directly from `react`.
 
 ## Quality Checks & Manual Verification
-There are no automated tests yet, so validate changes manually. Run both services (`uv run fastapi dev ...` and `npm run dev`), upload `sample.mp3`, and confirm `/charts/{job}` reaches a playable lane. When tweaking chart heuristics, inspect `/charts` JSON payloads and compare note density across modes. On the UI, rely on `npm run lint` plus smoke tests in the browser before pushing.
+There are no automated tests yet, so validate changes manually. Run both services (`uv run fastapi dev ...` and `npm run dev`), upload `sample.mp3`, and confirm `/audio/{job}` reaches a playable lane. When tweaking chart heuristics, inspect `/audio` JSON payloads and compare note density across modes. On the UI, rely on `npm run lint` plus smoke tests in the browser before pushing.
 
 ## Commit & Pull Request Guidelines
 Use Conventional Commits (`fix(frontend): ...`) with scopes that map to repo directories. PRs must summarize user impact, list validation steps, link issues, and include screenshots or terminal output for UI/API changes. Document the manual scenarios you exercised (e.g., which MP3, which density mode) and ensure `npm run lint` passes before asking for review.

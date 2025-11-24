@@ -1,6 +1,5 @@
 export type NoteType = "red_half" | "red_full" | "blue_half" | "blue_full";
 export type JobStatus = "queued" | "processing" | "completed" | "failed";
-export type ChartMode = "balanced" | "dense" | "sparse";
 
 export interface TaikoNote {
   time: number;
@@ -23,7 +22,6 @@ export interface ChartPayload {
   notes: TaikoNote[];
   beat_times: number[];
   stats: ChartStats;
-  mode: ChartMode;
 }
 
 export interface JobResponse {
@@ -37,12 +35,14 @@ export interface JobResponse {
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8000";
 
-export async function uploadChart(file: File, mode: ChartMode): Promise<JobResponse> {
+/**
+ * Upload an audio file to kick off chart generation and return the job metadata.
+ */
+export async function uploadAudio(file: File): Promise<JobResponse> {
   const formData = new FormData();
   formData.append("file", file);
-  formData.append("mode", mode);
 
-  const res = await fetch(`${API_BASE_URL}/charts`, {
+  const res = await fetch(`${API_BASE_URL}/audio`, {
     method: "POST",
     body: formData,
   });
@@ -55,7 +55,7 @@ export async function uploadChart(file: File, mode: ChartMode): Promise<JobRespo
 }
 
 export async function fetchJob(jobId: string): Promise<JobResponse> {
-  const res = await fetch(`${API_BASE_URL}/charts/${jobId}`);
+  const res = await fetch(`${API_BASE_URL}/audio/${jobId}`);
   if (!res.ok) {
     const message = await res.text();
     throw new Error(message || "Unable to fetch job");

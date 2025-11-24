@@ -1,6 +1,6 @@
-# Taiko Project
+# Taiko Loom
 
-Taiko transforms uploaded MP3s into Taiko-drum-friendly note charts. The backend (FastAPI + `librosa`) analyzes audio, while the frontend (Vite + React) lets players preview charts and drum along from the browser.
+Taiko Loom transforms uploaded MP3s into Taiko-drum-friendly note charts. The backend (FastAPI + `librosa`) analyzes audio, while the frontend (Vite + React) lets players preview charts and drum along from the browser.
 
 ## Repo Layout
 - `backend/` – FastAPI service in `src/taiko_backend/` (`audio.py`, `jobs.py`, `schemas.py`, `main.py`).
@@ -35,8 +35,8 @@ VITE_API_BASE_URL=https://your-hosted-backend.example.com
 ```
 
 ## Backend Service Highlights
-- `/charts` (POST multipart) accepts `file` plus optional `mode` (`balanced`, `dense`, `sparse`) and immediately returns a job id.
-- `/charts/{job}` (GET) lets the frontend poll for status/results.
+- `/audio` (POST multipart) accepts `file` plus optional `mode` (`balanced`, `dense`, `sparse`) and immediately returns a job id.
+- `/audio/{job}` (GET) lets the frontend poll for status/results.
 - Internals:
   - `audio.py` performs beat detection with `librosa` and emits note metadata.
   - `jobs.py` tracks asynchronous processing.
@@ -51,7 +51,7 @@ VITE_API_BASE_URL=https://your-hosted-backend.example.com
 ## Manual Verification (No Automated Tests Yet)
 1. Run both services (`uv run fastapi dev ...` and `npm run dev`).
 2. Upload `sample.mp3` or a short clip (<30s) to keep iterations fast.
-3. Watch the request lifecycle in your devtools: initial `/charts` POST should yield a job id, followed by `/charts/{job}` polling until status is `done`.
+3. Watch the request lifecycle in your devtools: initial `/audio` POST should yield a job id, followed by `/audio/{job}` polling until status is `done`.
 4. In the UI, confirm the rendered lane matches expectations across `balanced`, `dense`, and `sparse` modes. Capture screenshots or JSON snippets for PRs when behavior changes.
 
 ## Contributing
