@@ -1,62 +1,87 @@
-# Taiko Loom
+# Taiko Nights
 
-![Taiko Loom gameplay preview](./demo.gif)
+A playable, keyboard-driven festival rhythm game inspired by the supplied screenshot. React + Vite, Canvas note rendering, and Web Audio playback. No API key or external AI service is needed to play or analyze music.
 
-Taiko Loom transforms uploaded MP3s into Taiko-drum-friendly note charts. The backend (FastAPI + `librosa`) analyzes audio, while the frontend (Vite + React) lets players preview charts and drum along from the browser.
+## Play
 
-## Repo Layout
-- `backend/` – FastAPI service in `src/taiko_backend/` (`audio.py`, `jobs.py`, `schemas.py`, `main.py`).
-- `frontend/` – Vite/React client in `src/` with `api.ts` handling HTTP calls and `App.tsx` rendering the lane.
-- bring your own short MP3 clip for smoke tests (15–30s keeps iterations fast).
-
-## Prerequisites
-- [`uv`](https://github.com/astral-sh/uv) (bundled in this repo’s tooling)
-- Python 3.11 (managed via `uv`)
-- Node.js 18+ and npm
-- FFmpeg available on your PATH for reliable MP3 decoding
-
-## Quick Start
-1. **Backend**
-   ```bash
-   cd backend
-   uv python install 3.11      # first run
-   uv sync                     # installs dependencies into .venv
-   uv run fastapi dev taiko_backend.main:app --host 0.0.0.0 --port 8000
-   ```
-2. **Frontend**
-   ```bash
-   cd frontend
-   npm install
-   npm run dev                 # launches Vite on http://localhost:5173
-   ```
-3. (Optional) For production bundles: `npm run build` followed by `npm run preview`.
-
-Set `VITE_API_BASE_URL` in `frontend/.env.local` (or another Vite env file) if your backend is not on `http://localhost:8000`. Example:
-```
-VITE_API_BASE_URL=https://your-hosted-backend.example.com
+```sh
+cd /Users/david/Projects/taiko-nights
+npm install
+npm run dev -- --host 0.0.0.0 --port 4173 --strictPort
 ```
 
-## Backend Service Highlights
-- `/audio` (POST multipart) accepts `file` plus optional `mode` (`balanced`, `dense`, `sparse`) and immediately returns a job id.
-- `/audio/{job}` (GET) lets the frontend poll for status/results.
-- Internals:
-  - `audio.py` performs beat detection with `librosa` and emits note metadata.
-  - `jobs.py` tracks asynchronous processing.
-  - `schemas.py` defines Pydantic models for request/response validation.
+Open http://localhost:4173. The supplied Drake track is already prepared locally, so the Raspberry Pi does not need to stay online for playback.
 
-## Frontend App Highlights
-- `src/api.ts` centralizes all API calls and pulls `import.meta.env.VITE_API_BASE_URL`.
-- `App.tsx` renders the upload controls, status, and keyboard lane (`F/J` for red hits, `D/K` for blue hits).
-- Styling lives in `App.css` and `index.css`; assets go under `public/`.
-- Lint before committing: `npm run lint`.
+| Control | Action |
+| --- | --- |
+| F / J | Red center notes (Don) |
+| D / K | Blue rim notes (Ka) |
+| Both matching keys within 50 ms | Double score on large notes |
+| Any drum key repeatedly | Yellow drumrolls |
+| Space | Play, pause, resume |
+| R | Restart with a count-in |
+| Esc | Pause |
 
-## Manual Verification (No Automated Tests Yet)
-1. Run both services (`uv run fastapi dev ...` and `npm run dev`).
-2. Upload a short MP3 clip (<30s) to keep iterations fast.
-3. Watch the request lifecycle in your devtools: initial `/audio` POST should yield a job id, followed by `/audio/{job}` polling until status is `done`.
-4. In the UI, confirm the rendered lane matches expectations across `balanced`, `dense`, and `sparse` modes. Capture screenshots or JSON snippets for PRs when behavior changes.
+Choose Easy, Medium, or Hard before playing. Changing difficulty resets the run. Touch the labeled key pads on mobile. Scores and settings are saved in localStorage; imported audio stays in memory until the page reloads. The game pauses when its tab is hidden or window loses focus.
 
-## Contributing
-- Follow the Conventional Commits style used in Git history (`fix(frontend): derive preparedNotes from job payload`).
-- Document manual test coverage in PR descriptions (which track, which density mode).
-- Refer to `AGENTS.md` for contributor guidelines covering coding style, repo layout, and manual QA expectations.
+The score uses Perfect (±45 ms), Good (±95 ms), and Miss (outside the Good window). Correct hits build combo and soul; misses break combo and reduce soul. Finish with at least 80% soul to clear. Scroll speed and timing offset are available in Settings. Positive offset accommodates later hits, including output-device latency.
+
+## Analyze the supplied FLAC again
+
+The command-line script downloads the exact Raspberry Pi URL from the request, decodes it with FFmpeg, detects beats, creates all three charts, and writes a browser-friendly local MP3.
+
+```sh
+# Prerequisites: Python 3.11+ and ffmpeg on PATH
+python3 -m venv .venv
+.venv/bin/pip install -r requirements.txt
+npm run analyze
+```
+
+It writes `public/charts/default.json` and `public/audio/default.mp3`. Audio is excluded from git. Refresh the game after regenerating the default track. The environment used to verify this project had Python 3.14 and FFmpeg installed.
+
+Use another URL or local file:
+
+```sh
+.venv/bin/python scripts/analyze_track.py 'https://example.com/song.flac' --title 'My song' --artist 'Artist'
+.venv/bin/python scripts/analyze_track.py '/absolute/path/song.wav' --title 'My song' --artist 'Artist'
+```
+
+The script accepts downloads up to 250 MB and analyzes up to the first 20 minutes. Its default output paths replace the default track. `--output` and `--audio-output` support other output files; custom chart JSON files must be loaded by the app explicitly to become selectable.
+
+## How the charts are generated
+
+The Python path uses [librosa’s onset-strength and dynamic-programming beat tracker](https://librosa.org/doc/0.10.2/generated/librosa.beat.beat_track.html). Easy uses alternate detected beats. Medium uses the beat sequence with spectral-energy-based rim assignments. Hard adds detected offbeat onsets, large notes, and occasional roll phrases. Silent passages are suppressed. This creates playable, deterministic charts rather than random note streams.
+
+For the provided file, the final analysis produced:
+
+| Duration | Estimated tempo | Easy | Medium | Hard |
+| --- | --- | --- | --- | --- |
+| 3:57.344 | 126 BPM | 248 | 495 | 803 |
+
+`Change song` also accepts local audio or CORS-enabled audio URLs. These are decoded with Web Audio and analyzed in a Web Worker using energy flux, tempo autocorrelation, and a locally corrected beat grid. This lightweight browser analyzer is less precise than the Python script. Files are not uploaded to a server. Browser import is limited to 100 MB and 15 minutes; supported codecs depend on the browser.
+
+Beat detection is an estimate, especially for sparse introductions, tempo changes, or syncopated music. Use timing calibration for device latency; use the Python script for the better analysis path. Automatic charts are not equivalent to hand-authored charts for every song.
+
+## Validate / build
+
+```sh
+npm test
+npm run build
+npm run preview -- --port 4173
+```
+
+The 11 tests cover hit windows, wrong-color hits, closest-note selection, large-note bonuses, rolls, count-in pause/resume, misses, completion, restart, chart ordering, silent-audio rejection, and known-tempo detection. The production frontend is in `dist/client`.
+
+Browser QA was performed in the Codex in-app browser at 1536×1024, 1280×720, and 390×844. See `design-qa.md` for evidence and intentional visual adaptations. No hosting deployment was performed.
+
+## Project layout
+
+- `src/engine.js`: audio clock, scoring, note rendering, and game lifecycle.
+- `src/App.jsx`: orchestration, keyboard controls, track import, and persistence.
+- `src/components.jsx`: song picker, settings, instructions, controls, and results.
+- `src/analysis.worker.js`: browser audio analysis.
+- `scripts/analyze_track.py`: reusable URL/file analysis script.
+- `public/assets`: generated festival, sprite atlas, and patterned header artwork.
+- `design`: supplied reference, visual concept, asset prompts, and final browser captures.
+
+The artwork uses generated festival scenery and sprites; the text, controls, score, soul gauge, note movement, and interactions are live code. This is a standalone recreation of the visible single-player experience, not the original Taiko Web codebase or an implementation of its online modes/song catalog.

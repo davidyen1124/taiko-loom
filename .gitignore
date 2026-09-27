@@ -1,11 +1,21 @@
-# Python
+node_modules/
+dist/
+.venv/
+.cache/
+.DS_Store
 __pycache__/
 *.pyc
-backend/.venv/
 
-# Node
-frontend/node_modules/
-frontend/dist/
-
-# Mac
-.DS_Store
+# Audio is for local testing only. Never commit it.
+public/audio/
+backend/data/
+*.mp3
+*.wav
+*.flac
+*.ogg
+*.oga
+*.m4a
+*.aac
+*.opus
+*.wma
+*.aiff
