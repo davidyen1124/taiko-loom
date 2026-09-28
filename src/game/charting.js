@@ -1,9 +1,5 @@
 // Turns audio features into Easy / Medium / Hard charts.
 //
-// This is a port of backend/src/taiko_backend/charting.py, kept function for
-// function so the browser and the server write the same kind of chart. If you
-// change one, change the other.
-//
 // The generator works on a musical grid, the way a chart author would: notes
 // sit on beats and subdivisions, each difficulty is allowed a finer
 // subdivision than the one before, and the loudest sections become Go-Go Time.
@@ -33,8 +29,8 @@ const mean = values => values.reduce((sum, v) => sum + v, 0) / (values.length ||
 const floorDiv = (a, b) => Math.floor(a / b);
 const mod = (a, b) => ((a % b) + b) % b;
 
-// Rounds halves to the even neighbour, as Python does, so both generators
-// make the same choice on the rare exact half.
+// Rounds to `digits` places, halves to the even neighbour, so rounding never
+// leans one way.
 export function roundEven(value, digits = 0) {
   const scale = 10 ** digits;
   const scaled = value * scale;
@@ -46,7 +42,7 @@ export function roundEven(value, digits = 0) {
   return rounded / scale;
 }
 
-// Linear-interpolated quantile, matching numpy's default.
+// Linear-interpolated quantile.
 export function quantile(values, q) {
   if (!values.length) return 0;
   const sorted = Float64Array.from(values).sort();
@@ -68,15 +64,19 @@ export function detectFeel(features) {
   if (beats.length < 8 || onsets.length < 16) return 4;
   let straight = 0;
   let triplet = 0;
+  let all = 0;
   let b = 0;
   for (let i = 0; i < onsets.length; i++) {
     while (b + 1 < beats.length - 1 && beats[b + 1] <= onsets[i]) b++;
     const phase = (onsets[i] - beats[b]) / (beats[b + 1] - beats[b]);
     if (phase < 0 || phase >= 1) continue;
     const near = targets => Math.min(...targets.map(t => Math.abs(phase - t))) < 0.055;
+    all += onsetStrength[i];
     if (near([0.25, 0.5, 0.75])) straight += onsetStrength[i];
     if (near([1 / 3, 2 / 3])) triplet += onsetStrength[i];
   }
+  // a song with next to nothing between its beats has no feel to speak of
+  if (triplet < 0.12 * all) return 4;
   return triplet > 1.25 * straight ? 3 : 4;
 }
 

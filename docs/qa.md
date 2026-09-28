@@ -1,18 +1,23 @@
 # QA record
 
-Tested on 2026-09-27 in the Claude desktop browser pane (Chromium), against the dev
-server and a local backend. Viewports: 1280 x 720, 844 x 390 (phone, sideways) and
-375 x 812 (phone, upright, touch emulation).
+This is a record of what was checked, in the order it was checked. The game began
+with an analysis server written in Python. It was removed on 2026-09-27, once the
+browser analysed songs as well as the server did: see "Without a server" below. Rows
+in the first table that speak of a server, an API or uploading describe the game as
+it was then.
 
 ## Automated
 
 | Suite | Command | Result |
 | --- | --- | --- |
-| Rules engine, browser analyser, built-in songs, stage layout and artwork | `npm test` | 54 passed |
-| Backend analysis, charting and API | `npm run test:backend` | 29 passed |
+| Rules engine, analyser, built-in songs, stage layout and artwork | `npm test` | 57 passed |
 | Hosting worker and build output | `npm run build && npm run test:sites` | 4 passed |
 
 ## Checked by hand
+
+Tested on 2026-09-27 in the Claude desktop browser pane (Chromium), against the dev
+server and the analysis server the game then had. Viewports: 1280 x 720, 844 x 390
+(phone, sideways) and 375 x 812 (phone, upright, touch emulation).
 
 | Area | What was done | Result |
 | --- | --- | --- |
@@ -108,6 +113,41 @@ the development build and the static build served under `/taiko-nights/`.
 | Drawing cost | WebKit, busiest part of the hardest song at 2560 x 1440: 3.2 ms a frame | Pass |
 | Drawing cost | Chromium without a graphics card: the same with every picture blocked as with them | No change |
 
+## Without a server
+
+The analysis server was removed on 2026-09-27. Tested the same day with Playwright
+driving headless Chromium and WebKit against the static build served under
+`/taiko-nights/`, then against the published site.
+
+Before it was removed, the two analysers were compared on the same 3:57 song:
+
+| | Server | Browser |
+| --- | --- | --- |
+| Tempo | 126.0 | 126.0 |
+| Beats | 499 | 499, each within 3 ms of the server's |
+| First bar line | 0.005 s | 0.005 s |
+| Go-Go sections | 4 | the same 4 |
+| Notes, Easy / Medium / Hard | 264 / 469 / 765 | 264 / 469 / 768 |
+| Notes in the same place | | 88% / 95% / 92% |
+| Time taken | 12 s | 1.4 to 3 s |
+
+They also agreed on two of the three built-in songs. On the third, at 168 BPM, the
+server heard 112 BPM and a shuffle; the browser heard it correctly.
+
+| Area | What was done | Result |
+| --- | --- | --- |
+| Same results | The 3:57 song after the removal and the tempo fix: 126 BPM, 499 beats, same bar line, same four Go-Go sections, 262 / 468 / 771 notes | Pass |
+| Nothing leaves | No request is made while a song is analysed; nothing is posted at any point; nothing asks for `/api` | Pass |
+| No trace | No screen speaks of a server, of being offline or of uploading | Pass |
+| Add a song | 3:57 MP3 analysed in 2.6 s (Chromium), 1.4 s (WebKit), saved, on the shelf after a reload, plays, removed | Pass |
+| Tempo | A 168 BPM song in straight eighths, started from the wrong guess of 112: settles on 168 | Pass after fix 27, automated |
+| Tempo | A 100 BPM shuffle, started from the wrong guess of 150: settles on 100 | Pass after fix 27, automated |
+| Tempo | 24 cases in all: 9 drum loops, 3 built-in songs and the 3:57 song, each from its true tempo and from every look-alike in range | Pass, 24 of 24 |
+| Feel | A 60 BPM song charted at 120 has nothing between its beats, and is not called a shuffle | Pass after fix 28, automated |
+| Whole site | 36 end-to-end checks in each browser | Pass, 72 of 72 |
+| Cut-off text | Audit at seven window shapes in both browsers | Pass, 98 of 98 screens |
+| Touch drum | Real touches in both browsers, sideways and upright | Pass, 36 of 36 |
+
 ## Bugs found and fixed during QA
 
 1. **Stale menu state.** Two keys pressed quickly let the second act on the screen as
@@ -183,6 +223,14 @@ Causes and fixes:
     is out, the whole head of the drum sits above the strip the phone keeps, and only
     the barrel reaches the edge. The HUD also keeps clear of the notch.
 
+27. **A tempo could be mistaken for the one three to two against it.** Steady eighth
+    notes at 168 BPM put a drum hit on every line of a grid at 112 as well, so if the
+    first guess was 112 it stayed. Nothing in the old rule could tell them apart. The
+    rule now also asks whether the music repeats two and four beats later, and whether
+    all three thirds of the beat are played. Found by comparing the two analysers.
+28. **A song with nothing between its beats could be called a shuffle,** on the
+    strength of a few stray attacks. It now takes a real share of the song's attacks.
+
 The audit measures each text's letters, grows that box by half the outline width, and
 tests it against every ancestor that clips. It switches animations off while it
 measures, so a panel that is still sliding open is judged by where it ends up.
@@ -206,10 +254,12 @@ measures, so a panel that is still sliding open is judged by where it ends up.
 - Sound was verified by measurement, not by ear: level, tuning of every pitched
   instrument, timing against the chart, and a spectrogram of each song. Whether the
   three songs are pleasant to listen to needs a person.
-- The backend reads the 168 BPM built-in song as 112 BPM with a shuffle, a 3:2
-  confusion. The browser analyser reads it correctly. Not yet fixed in the backend.
+- A song in 12/8, with every triplet played, is rhythmically the same as a faster
+  song in straight eighths. The analyser takes it for the faster song.
 - Bar lines can land half a bar out on music whose first and third beats are alike.
-  Both analysers agree with each other when this happens.
+- The analyser was compared with the server it replaced on one real song and three
+  built-in ones. That is a narrow sample of music.
+- A song lives in one browser on one device, for as long as that browser keeps it.
 - Chart quality on real music was checked for tempo, structure and playability, not
   for how musical it feels. That needs a person with the song playing.
 - Bluetooth and TV latency differ per device. Use the timing offset in Settings.

@@ -5,15 +5,11 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "api": "uv run --project backend uvicorn taiko_backend.main:app --host 127.0.0.1 --port 8000",
     "build": "vite build && node scripts/prepare-sites-build.mjs",
-    "build:pages": "VITE_BACKEND=off vite build --outDir dist/pages",
     "preview": "vite preview",
-    "preview:pages": "vite preview --outDir dist/pages --base /taiko-nights/ --port 4174 --strictPort",
+    "preview:pages": "vite preview --base /taiko-nights/ --port 4174 --strictPort",
     "test": "node --test tests/engine.test.mjs tests/analyze.test.mjs tests/songs.test.mjs tests/layout.test.mjs tests/art.test.mjs",
-    "test:backend": "uv run --project backend pytest -q backend/tests",
-    "test:sites": "node --test tests/sites-worker.test.mjs",
-    "analyze": "uv run --project backend python scripts/analyze_track.py"
+    "test:sites": "node --test tests/sites-worker.test.mjs"
   },
   "dependencies": {
     "@fontsource/dela-gothic-one": "^5.3.0",
@@ -24,5 +20,5 @@
     "react-dom": "19.2.0",
     "vite": "6.4.2"
   },
-  "description": "A festival taiko rhythm game. Upload any song and play it on Easy, Medium or Hard."
+  "description": "A festival taiko rhythm game. Add any song and play it on Easy, Medium or Hard."
 }

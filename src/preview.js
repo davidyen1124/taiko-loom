@@ -1,8 +1,7 @@
 // Plays a short loop of the highlighted song on the song select screen.
-import { apiUrl } from './api.js';
 import { audio } from './game/audio.js';
 import { renderDemoAudio } from './game/songs/index.js';
-import { localAudioUrl } from './library.js';
+import { audioUrl } from './library.js';
 
 const LENGTH = 14;
 let current = null;
@@ -35,16 +34,18 @@ export async function startPreview(song, volume) {
   if (!audio.ready || volume <= 0) return;
   const from = Math.max(0, Math.min(song.gogo ?? song.duration * 0.3, song.duration - LENGTH - 1));
   const level = volume ** 1.6 * 0.8;
+  const again = () => setTimeout(() => { if (mine === token) startPreview(song, volume); }, LENGTH * 1000);
 
   if (song.source !== 'demo') {
-    // streamed, so a long song is not decoded whole just to hear a few bars
-    const address = song.source === 'server' ? apiUrl(`/api/songs/${song.id}/audio`) : await localAudioUrl(song.id).catch(() => null);
+    // one of your songs: streamed from the saved file, so a long song is not
+    // decoded whole just to hear a few bars
+    const address = await audioUrl(song.id).catch(() => null);
     if (mine !== token || !address) return;
     const element = new Audio();
     element.preload = 'auto';
     element.src = address;
     element.volume = 0;
-    const begin = () => {
+    element.addEventListener('loadedmetadata', () => {
       if (mine !== token) return;
       element.currentTime = from;
       element.play().then(() => {
@@ -55,9 +56,8 @@ export async function startPreview(song, volume) {
           if (element.volume >= level) clearInterval(rise);
         }, 30);
       }).catch(() => {});
-    };
-    element.addEventListener('loadedmetadata', begin, { once: true });
-    current = { element, timer: setTimeout(() => { if (mine === token) startPreview(song, volume); }, LENGTH * 1000) };
+    }, { once: true });
+    current = { element, timer: again() };
     return;
   }
 
@@ -72,5 +72,5 @@ export async function startPreview(song, volume) {
   source.buffer = buffer;
   source.connect(gain);
   source.start(0, from, LENGTH + 1);
-  current = { source, gain, timer: setTimeout(() => { if (mine === token) startPreview(song, volume); }, LENGTH * 1000) };
+  current = { source, gain, timer: again() };
 }

@@ -21,7 +21,7 @@ import './styles.css';
 
 export function App() {
   const [screen, setScreen] = useState('title');
-  const [shelf, setShelf] = useState({ online: null, backend: true, songs: [] });
+  const [songs, setSongs] = useState([]);
   const [settings, setSettings] = useState(loadSettings);
   const [records, setRecords] = useState(loadRecords);
   const [dialog, setDialog] = useState(null);           // settings | help | upload
@@ -36,7 +36,7 @@ export function App() {
 
   const refresh = useCallback(async () => {
     const next = await loadShelf();
-    setShelf(next);
+    setSongs(next);
     return next;
   }, []);
 
@@ -114,15 +114,15 @@ export function App() {
       setError(failure.message || 'This song could not be removed.');
     }
     const next = await refresh();
-    setFocus(next.songs[0]?.id);
+    setFocus(next[0]?.id);
   }, [refresh]);
 
   return (
     <Stage>
-      {screen === 'title' && <TitleScreen online={shelf.online} backend={shelf.backend} onStart={() => { setScreen('select'); refresh(); }} />}
+      {screen === 'title' && <TitleScreen onStart={() => { setScreen('select'); refresh(); }} />}
       {screen === 'select' && (
         <SongSelect
-          songs={shelf.songs} records={records} settings={settings} online={Boolean(shelf.online)} backend={shelf.backend} busy={Boolean(dialog || loading)} initial={focus}
+          songs={songs} records={records} settings={settings} busy={Boolean(dialog || loading)} initial={focus}
           onPlay={play} onAdd={() => setDialog('upload')} onDelete={remove}
           onSettings={() => { audio.jingle('confirm'); setDialog('settings'); }} onHelp={() => { audio.jingle('confirm'); setDialog('help'); }}
           onBack={() => { stopPreview(); setScreen('title'); }}
@@ -137,7 +137,7 @@ export function App() {
 
       {dialog === 'settings' && <SettingsDialog settings={settings} onChange={setSettings} onClose={() => setDialog(null)} />}
       {dialog === 'help' && <HelpDialog onClose={() => setDialog(null)} />}
-      {dialog === 'upload' && <UploadDialog online={Boolean(shelf.online)} backend={shelf.backend} onClose={() => setDialog(null)} onAdded={added} />}
+      {dialog === 'upload' && <UploadDialog onClose={() => setDialog(null)} onAdded={added} />}
 
       {loading && (
         <div className="loading" role="status" aria-live="polite">

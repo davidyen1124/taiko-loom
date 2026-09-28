@@ -2,13 +2,13 @@
 
 ## Working on it
 
-Run the servers yourself and look at the result in a browser. Do not hand the user
+The game is a static site. There is no server: songs are analysed in the player's
+browser. Run it yourself and look at the result in a browser. Do not hand the user
 start-up instructions when you can run it.
 
-- `npm run api` starts the analysis backend on port 8000 (FastAPI, managed by uv).
-- `npm run dev -- --port 4173` starts the game. `/api` is proxied to the backend.
-- `npm run build:pages && npm run preview:pages` serves the public site as GitHub
-  Pages will, at http://localhost:4174/taiko-nights/. It has no backend.
+- `npm run dev -- --port 4173` starts the game.
+- `npm run build && npm run preview:pages` serves the build as GitHub Pages will, at
+  http://localhost:4174/taiko-nights/.
 - `/?gallery` shows every sprite in motion. `/?gallery=sheet` draws every painted
   sprite with its name: the model sheet kept in `docs/art`.
 - In development `await __auditText()` lists any text that is cut off on the screen
@@ -18,8 +18,8 @@ start-up instructions when you can run it.
 
 ## Rules that must hold
 
-1. **Never commit audio.** `.gitignore` excludes audio extensions and `backend/data/`.
-   Tests synthesise their own audio. Check `git status` before every commit. The
+1. **Never commit audio.** `.gitignore` excludes audio extensions. Tests synthesise
+   their own audio. Check `git status` before every commit. The
    Pages workflow refuses to publish a build that contains an audio file.
 2. **All artwork and music are original.** Do not add or imitate characters, sprites,
    logos, sounds, songs or charts from any existing game or recording. A new built-in
@@ -45,14 +45,14 @@ start-up instructions when you can run it.
 6. **Menus read live state.** Key handlers read from a ref updated during render, so
    two keys pressed in quick succession never act on a stale screen. Hover selection
    follows real pointer movement only.
-7. **Both analysers are the same analyser.** `src/game/features.js` and
-   `src/game/charting.js` follow `backend/src/taiko_backend/analysis.py` and
-   `charting.py` step for step, and share one chart format (`version: 2`) with
-   `src/game/songs/score.js`. Change them together, then compare both on the same
-   song.
-8. **The game must work with no server.** The public site is static. Anything new has
-   to work when `VITE_BACKEND=off`, and no address may start with `/`: use
-   `import.meta.env.BASE_URL` for files in `public/`.
+7. **One analyser, one chart format.** `src/game/features.js` listens and
+   `src/game/charting.js` writes charts in the format the built-in songs use
+   (`version: 2`, `src/game/songs/score.js`). A change to how tempo is chosen must
+   hold from a wrong first guess as well as a right one: the tests start the analyser
+   from a tempo's look-alikes on purpose.
+8. **There is no server, and a song never leaves the device.** Nothing may send a
+   player's audio, or anything made from it, anywhere. The game is static files: no
+   address may start with `/`; use `import.meta.env.BASE_URL` for files in `public/`.
 9. **Every picture has a stand-in.** Painted sprites and plates load after the first
    frame and may fail to load. Draw through `drawSprite`, which says whether it
    drew, and keep the code-drawn figure behind it.
@@ -71,7 +71,7 @@ start-up instructions when you can run it.
 ## Before you commit
 
 ```bash
-npm test && npm run test:backend && npm run build && npm run test:sites
+npm test && npm run build && npm run test:sites
 ```
 
 Use Conventional Commits (`feat:`, `fix:`, `docs:`), as the history does.
@@ -81,8 +81,8 @@ Use Conventional Commits (`feat:`, `fix:`, `docs:`), as the history does.
 Keep `.openai/hosting.json`, `worker/index.js`, `scripts/prepare-sites-build.mjs` and
 `tests/sites-worker.test.mjs` intact. `npm run build` must leave
 `dist/client/index.html`, `dist/server/index.js` and `dist/.openai/hosting.json`.
-A static host serves the whole game, analyser included; the backend is optional.
-GitHub Pages is published by `.github/workflows/pages.yml` from `dist/pages`.
+Any static host serves the whole game. GitHub Pages is published by
+`.github/workflows/pages.yml` from `dist/client`.
 
 ## Design decisions on record
 
