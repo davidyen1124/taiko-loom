@@ -120,9 +120,6 @@ kbd.ka { background: var(--ka); color: var(--ink); }
   background: rgba(26, 16, 20, .78); color: #fff; font-size: 14px; letter-spacing: .02em; white-space: nowrap;
 }
 .chip i { width: 10px; height: 10px; border-radius: 50%; background: #9a8a94; }
-.chip.online i { background: #6fe36f; box-shadow: 0 0 0 3px rgba(111, 227, 111, .25); }
-.chip.offline i { background: #ffb03a; }
-.chip.local i { background: #6fd3ff; box-shadow: 0 0 0 3px rgba(111, 211, 255, .25); }
 .chip.auto { background: var(--gold); color: var(--ink); }
 
 .meter { height: 22px; border: 4px solid var(--ink); border-radius: 12px; background: #3a2630; overflow: hidden; }
@@ -174,10 +171,7 @@ kbd.ka { background: var(--ka); color: var(--ink); }
 .title-keys .don kbd { background: var(--don); color: #fff; }
 .title-keys .ka kbd { background: var(--ka); }
 .title-status { position: absolute; left: calc(var(--ox) * .5 + 64px); top: calc(var(--oy) + 672px); z-index: 1; display: flex; align-items: center; gap: 9px; font-size: 14px; color: #f0e2ec; text-shadow: 0 2px 0 var(--ink); }
-.title-status i { width: 10px; height: 10px; border-radius: 50%; background: #9a8a94; }
-.title-status.online i { background: #6fe36f; }
-.title-status.offline i { background: #ffb03a; }
-.title-status.local i { background: #6fd3ff; }
+.title-status i { width: 10px; height: 10px; border-radius: 50%; background: #6fd3ff; }
 
 /* ---- song select ---------------------------------------------------- */
 
