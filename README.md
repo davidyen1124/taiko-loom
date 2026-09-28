@@ -77,9 +77,15 @@ keys and Enter work too.
 
 A taiko appears on screen. Tap its skin for ドン and its rim for カッ; the left and
 right halves are your two hands, so two fingers together play a big note. Nothing is
-wasted: a tap anywhere off the skin counts as the rim. Held sideways, the drum rises
-from the bottom edge and the festival friends dance behind it. Held upright, the
-stage sits at the top and the whole drum sits under it.
+wasted: a tap anywhere off the skin counts as the rim.
+
+Held sideways, the stage moves up to make room and the festival friends dance behind
+the drum. Held upright, the stage sits at the top and the drum sits under it. Either
+way the whole head of the drum stays clear of the bottom edge, where a phone listens
+for its own gestures, and the score and the pause button keep clear of the notch.
+
+For the full screen, add the game to your home screen (Share, then Add to Home
+Screen on an iPhone). It then opens without the browser's bars.
 
 | Sideways | Upright |
 | --- | --- |
@@ -210,7 +216,7 @@ npm run test:backend
 npm run build && npm run test:sites
 ```
 
-52 engine, analyser, song, layout and artwork tests, 29 backend tests, 4 hosting tests. What was
+54 engine, analyser, song, layout and artwork tests, 29 backend tests, 4 hosting tests. What was
 checked in real browsers is recorded in [docs/qa.md](docs/qa.md).
 
 ## Publish

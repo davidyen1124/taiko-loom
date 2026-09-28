@@ -6,10 +6,12 @@ import { Pause, Play, RotateCcw, ListMusic } from 'lucide-react';
 import { audio } from '../game/audio.js';
 import { Game } from '../game/engine.js';
 import { menuAction, padForKey, padForPoint } from '../game/input.js';
-import { STAGE } from '../game/layout.js';
+import { FRAME, STAGE } from '../game/layout.js';
 import { Renderer } from '../game/renderer.js';
 import { crownFor, isBig, rankFor } from '../game/rules.js';
 import { drumLayout, padAt } from '../game/touchDrum.js';
+import { safeArea } from '../ui/safeArea.js';
+import { useStage } from '../ui/Stage.jsx';
 import { TouchDrum } from '../ui/TouchDrum.jsx';
 import { loadFonts } from '../fonts.js';
 
@@ -33,8 +35,16 @@ export function PlayScreen({ song, buffer, difficulty, settings, session, onFini
   const [touch, setTouch] = useState(() => typeof window !== 'undefined' && window.matchMedia('(pointer: coarse)').matches);
   const [drum, setDrum] = useState(null);
   const pads = useRef();
+  const stage = useStage();
   const shown = touch && settings.guide;
   live.current.drum = shown ? drum : null;
+
+  // While the drum is out the stage makes room for it underneath.
+  const { dock } = stage;
+  useEffect(() => {
+    dock(shown);
+    return () => dock(false);
+  }, [dock, shown]);
 
   // one run of the song, restarted whenever `run` changes
   useEffect(() => {
@@ -191,21 +201,25 @@ export function PlayScreen({ song, buffer, difficulty, settings, session, onFini
       const box = canvas.current?.getBoundingClientRect();
       if (!box || !box.width) return;
       const upright = window.innerHeight > window.innerWidth;
-      const next = drumLayout(window.innerWidth, window.innerHeight, { upright, stageBottom: box.bottom });
+      const row = box.height / STAGE.height;
+      const next = drumLayout(window.innerWidth, window.innerHeight, {
+        upright, stageBottom: box.bottom, inset: safeArea(),
+        laneBottom: box.top + (FRAME.y + FRAME.height + STAGE.top) * row,
+      });
       const unit = STAGE.width / box.width;
       const behind = shown && !upright
         ? { cx: (next.cx - box.left) * unit, cy: (next.cy - box.top) * unit, rx: next.rx * unit, ry: next.ry * unit }
         : null;
       live.current.behind = behind;
       if (state.current.renderer) state.current.renderer.drum = behind;
-      setDrum(next);
+      setDrum({ ...next, upright });
     };
     place();
     const observer = new ResizeObserver(place);
     observer.observe(canvas.current);
     window.addEventListener('resize', place);
     return () => { observer.disconnect(); window.removeEventListener('resize', place); };
-  }, [shown]);
+  }, [shown, stage.width, stage.height, stage.scale, stage.docked]);
 
   // The whole display listens, not just the stage or the picture of the drum.
   useEffect(() => {
@@ -225,7 +239,7 @@ export function PlayScreen({ song, buffer, difficulty, settings, session, onFini
     <section className="play" aria-label={`Playing ${song.title}`}>
       <canvas ref={canvas} className="play-canvas" aria-label="Notes scroll from right to left. Hit them when they reach the circle." />
       <button className="play-pause" aria-label="Pause" onClick={pause}><Pause size={26} fill="currentColor" strokeWidth={0} /></button>
-      {shown && drum && !paused && createPortal(<TouchDrum ref={pads} drum={drum} height={window.innerHeight} />, document.body)}
+      {shown && drum && !paused && createPortal(<TouchDrum ref={pads} drum={drum} upright={drum.upright} />, document.body)}
       {paused && (
         <div className="pause" role="dialog" aria-modal="true" aria-label="Paused">
           <div className="pause-panel">

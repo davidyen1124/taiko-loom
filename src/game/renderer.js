@@ -268,11 +268,13 @@ export class Renderer {
     drawTopBand(c, scale, now, mood, Math.max(this.gogo, this.cleared), width, TOP_HEIGHT + top);
     c.save();
     c.translate(0, top);
+    c.fillStyle = '#0d090c';
+    c.fillRect(0, FRAME.y, width, FRAME.height);
+    // The HUD keeps clear of a notch: it is drawn from the first free column.
+    c.translate(STAGE.left, 0);
     drawGauge(c, { value: stats.gauge, clear: rule.clear, time: now, pulse: 1 - (now - this.gaugeAt) / 0.25 });
 
     // ---- frame, panel, lane ---------------------------------------------
-    c.fillStyle = '#0d090c';
-    c.fillRect(0, FRAME.y, width, FRAME.height);
     const swing = at => clamp(1 - (now - at) / 0.16);
     drawPanel(c, scale, {
       difficulty: game.difficulty,

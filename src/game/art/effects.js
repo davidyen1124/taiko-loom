@@ -240,7 +240,7 @@ function drawBanner(c, item, t) {
   c.save();
   c.globalAlpha = 1 - leave;
   // Banners cross the sky above the festival, where they cover no text.
-  c.translate(lerp(STAGE.width + 280, STAGE.width / 2, enter) - leave * 260, 360 + 58);
+  c.translate(lerp(STAGE.width + 280, STAGE.width / 2 - STAGE.left, enter) - leave * 260, 360 + 58);
   c.transform(1, 0, -0.18, 1, 0, 0);
   box(c, -250, -30, 500, 60, 10, INK);
   box(c, -244, -24, 488, 48, 7, item.color);

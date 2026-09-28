@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { GAUGE, LANE, SAFE, STAGE, TARGET, TITLE, setStage, stageFor } from '../src/game/layout.js';
+import { GAUGE, LANE, SAFE, STAGE, TARGET, TITLE, reserveFor, setStage, stageFor } from '../src/game/layout.js';
 
 const fills = (w, h) => {
   const stage = stageFor(w, h);
@@ -47,6 +47,27 @@ test('a phone held upright keeps the design grid and says so', () => {
   assert.equal(stageFor(820, 1180).upright, false, 'a tall desktop window keeps its stage');
   assert.equal(stageFor(820, 1180, { touch: true }).upright, true);
   assert.equal(stageFor(1180, 820, { touch: true }).upright, false);
+});
+
+test('with the touch drum out, the stage moves up and leaves a strip free under it', () => {
+  // an iPhone held sideways keeps 21 px along the bottom for itself
+  assert.equal(reserveFor(390, 21), 52);
+  assert.equal(reserveFor(390, 0), 31);
+  assert.equal(reserveFor(1024, 0), 40, 'a big display does not give up more than it needs');
+  const stage = stageFor(844, 390, { touch: true, reserve: 52 });
+  assert.equal(stage.docked, true);
+  assert.equal(stage.height, 720);
+  assert.ok(Math.abs(stage.height * stage.scale - 338) < 0.01, 'the stage is as tall as the room it has');
+  assert.ok(Math.abs(stage.width * stage.scale - 844) < 0.5, 'and still as wide as the window');
+  assert.equal(stageFor(844, 390, { touch: true }).docked, false);
+  // the HUD keeps clear of a notch at either end
+  setStage(1798, 720, { left: 100, right: 100 });
+  assert.equal(STAGE.left, 100);
+  assert.equal(LANE.width, 1798 - 100 - LANE.x, 'notes still come in from the very edge');
+  assert.equal(TITLE.x, 1798 - 200 - 24);
+  assert.equal(GAUGE.orbX, 1798 - 200 - 44);
+  setStage(1280, 720);
+  assert.deepEqual([STAGE.left, STAGE.right, LANE.width], [0, 0, 1280 - LANE.x]);
 });
 
 test('what hangs off the right edge follows the stage', () => {

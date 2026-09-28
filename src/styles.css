@@ -51,8 +51,18 @@ button:focus-visible, input:focus-visible, [tabindex]:focus-visible { outline: 4
   position: absolute; left: 50%; top: 50%; transform-origin: center; overflow: hidden;
   background: var(--night); user-select: none; -webkit-user-select: none;
 }
-/* held upright, the stage sits at the top and the drum zones take the rest */
+/* held upright, the stage sits at the top and the drum takes the rest */
 .stage-frame.upright .stage { top: env(safe-area-inset-top, 0px); transform-origin: top center; }
+/* sideways with the touch drum out, the stage sits at the top and a strip under
+   it is left free: the festival curtain hangs there, behind the drum */
+.stage-frame.docked .stage { top: 0; transform-origin: top center; }
+.stage-frame.docked::after {
+  content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: calc(var(--reserve) + 1px);
+  border-top: 3px solid var(--ink);
+  background:
+    linear-gradient(rgba(26, 16, 20, .34), rgba(26, 16, 20, .1) 30%, rgba(26, 16, 20, .5)),
+    repeating-linear-gradient(90deg, #f2452b 0 26px, #fff6e0 26px 52px);
+}
 .art { display: block; }
 .backdrop { position: absolute; inset: 0; z-index: 0; }
 
@@ -245,8 +255,8 @@ kbd.ka { background: var(--ka); color: var(--ink); }
   position: absolute; top: calc(var(--oy) + 322px); z-index: 3; display: grid; place-items: center; width: 64px; height: 64px; border: 4px solid var(--ink); border-radius: 50%;
   background: var(--ka); color: var(--ink); box-shadow: 0 5px 0 var(--ink); transition: transform .08s, box-shadow .08s;
 }
-.shelf-arrow.left { left: 22px; }
-.shelf-arrow.right { right: 22px; }
+.shelf-arrow.left { left: calc(22px + var(--left, 0px)); }      /* clear of a notch */
+.shelf-arrow.right { right: calc(22px + var(--right, 0px)); }
 .shelf-arrow:hover { transform: translateY(-2px); box-shadow: 0 7px 0 var(--ink); }
 .shelf-arrow:active { transform: translateY(3px); box-shadow: 0 2px 0 var(--ink); }
 
@@ -341,14 +351,14 @@ kbd.ka { background: var(--ka); color: var(--ink); }
 body:has(.play) { touch-action: none; }
 .play-canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
 .play-pause {
-  position: absolute; left: 12px; top: 40px; z-index: 2; display: grid; place-items: center; width: 48px; height: 48px; border: 4px solid var(--ink); border-radius: 50%;
+  position: absolute; left: calc(12px + var(--left, 0px)); top: 40px; z-index: 2; display: grid; place-items: center; width: 48px; height: 48px; border: 4px solid var(--ink); border-radius: 50%;
   background: rgba(255, 246, 224, .92); color: var(--ink); box-shadow: 0 4px 0 var(--ink);
 }
 .play-pause:active { transform: translateY(3px); box-shadow: 0 1px 0 var(--ink); }
 /* The touch drum is drawn on the page itself, outside the scaled stage, so it
    is the size of a real thumb on any phone. The picture shows the drum from
    straight above; stretching it wider than tall tilts it away from the player. */
-.touch-drum { position: fixed; z-index: 5; pointer-events: none; font-family: var(--round); font-weight: 900; color: #fff; filter: drop-shadow(0 -6px 14px rgba(10, 4, 16, .45)); }
+.touch-drum { position: fixed; z-index: 5; pointer-events: none; font-family: var(--round); font-weight: 900; color: #fff; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }
 .touch-drum-side { position: absolute; left: .5%; right: .5%; top: 50%; border: 3px solid var(--ink); border-top: 0; background: linear-gradient(90deg, #3d1006, #8f2a14 16%, #c4472a 50%, #8f2a14 84%, #3d1006); }
 .touch-drum-head { position: absolute; inset: 0; }
 .touch-drum-head img { position: absolute; inset: 0; width: 100%; height: 100%; display: block; -webkit-user-drag: none; user-select: none; }

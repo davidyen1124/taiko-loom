@@ -7,7 +7,7 @@ import { SKIN } from '../game/touchDrum.js';
 const PICTURE = `${import.meta.env.BASE_URL}art/drum.webp`;
 const PARTS = [['don', 'left'], ['don', 'right'], ['ka', 'left'], ['ka', 'right']];
 
-export const TouchDrum = forwardRef(function TouchDrum({ drum, height }, ref) {
+export const TouchDrum = forwardRef(function TouchDrum({ drum, upright }, ref) {
   const head = useRef();
   const parts = useRef({});
   useImperativeHandle(ref, () => ({
@@ -18,26 +18,22 @@ export const TouchDrum = forwardRef(function TouchDrum({ drum, height }, ref) {
     },
   }), []);
 
-  const { cx, cy, rx, ry, depth, skin } = drum;
-  const bottom = Math.min(height, cy + skin.ry);
-  // words sit in the part of the drum that is on screen
-  const donY = (cy - skin.ry + bottom) / 2 - (cy - ry);
-  const ring = (1 + SKIN) / 2;
-  const lift = Math.min(0.92, Math.max(0.34, (cy - (height - 34)) / (ring * ry) + 0.12));
-  const kaX = ring * rx * Math.sqrt(1 - lift * lift);
-  const kaY = ry - ring * ry * lift;
+  const { cx, cy, rx, ry, floor, skin } = drum;
+  const ring = (1 + SKIN) / 2;                   // the middle of the painted rim
+  // the barrel: straight down to the edge of the display, or rounded off under a whole drum
+  const barrel = { height: floor - cy, borderRadius: upright ? `0 0 ${rx}px ${rx}px / 0 0 ${ry}px ${ry}px` : 0 };
   return (
     <div className="touch-drum" aria-hidden="true" style={{ left: cx - rx, top: cy - ry, width: rx * 2, height: ry * 2, '--skin': SKIN }}>
-      <i className="touch-drum-side" style={{ height: ry + depth, borderRadius: `0 0 ${rx}px ${rx}px / 0 0 ${ry}px ${ry}px` }} />
+      <i className="touch-drum-side" style={barrel} />
       <div className="touch-drum-head" ref={head}>
         <img src={PICTURE} alt="" draggable={false} />
         {PARTS.map(([kind, hand]) => (
           <i key={`${kind}-${hand}`} className={`touch-drum-light ${kind} ${hand}`} ref={node => { parts.current[`${kind}-${hand}`] = node; }} />
         ))}
-        <span className="touch-drum-word don" style={{ left: rx - skin.rx * 0.46, top: donY }}>ドン</span>
-        <span className="touch-drum-word don" style={{ left: rx + skin.rx * 0.46, top: donY }}>ドン</span>
-        <span className="touch-drum-word ka" style={{ left: rx - kaX, top: kaY }}>カッ</span>
-        <span className="touch-drum-word ka" style={{ left: rx + kaX, top: kaY }}>カッ</span>
+        <span className="touch-drum-word don" style={{ left: rx - skin.rx * 0.46, top: ry }}>ドン</span>
+        <span className="touch-drum-word don" style={{ left: rx + skin.rx * 0.46, top: ry }}>ドン</span>
+        <span className="touch-drum-word ka" style={{ left: rx - ring * rx, top: ry }}>カッ</span>
+        <span className="touch-drum-word ka" style={{ left: rx + ring * rx, top: ry }}>カッ</span>
       </div>
     </div>
   );
