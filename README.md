@@ -67,27 +67,33 @@ keys and Enter work too.
 
 ### On a phone or tablet
 
-A taiko appears on screen. Tap its skin for ドン and its rim for カッ; the left and
-right halves are your two hands, so two fingers together play a big note. Nothing is
-wasted: a tap anywhere off the skin counts as the rim.
+Hold the device sideways. The whole display is the drum, in four zones from left to
+right: カッ, ドン, ドン, カッ. The two in the middle are the skin, the two at the ends are
+the rim, and each half of the display is a hand, so two thumbs together play a big
+note. How high a tap lands does not matter.
 
-Held sideways, the stage moves up to make room and the festival friends dance behind
-the drum. Held upright, the stage sits at the top and the drum sits under it. Either
-way the whole head of the drum stays clear of the bottom edge, where a phone listens
-for its own gestures, and the score and the pause button keep clear of the notch.
+The zones are only light. Their colour stays under the lane, out of the way of the
+notes: blue at the ends, red in the middle, brightest along the bottom edge where
+thumbs are. A zone lights up when it is played, and the words fade once the song is
+under way.
 
-For the full screen, add the game to your home screen (Share, then Add to Home
-Screen on an iPhone). It then opens without the browser's bars.
+The game fills the display from edge to edge, in the browser and from the home
+screen. On a phone the lane is drawn larger than on a desktop, the sky band smaller,
+and the score and the pause button keep clear of the notch. Held upright, the game
+asks to be turned, and a song in progress waits.
 
-| Sideways | Upright |
+For the most room, add the game to your home screen (Share, then Add to Home Screen
+on an iPhone). It then opens without the browser's bars.
+
+| From the home screen | In the browser, with its bars showing |
 | --- | --- |
-| ![The drum on a phone held sideways](docs/screens/touch-sideways.webp) | ![The drum on a phone held upright](docs/screens/touch-upright.webp) |
+| ![The touch zones on a phone](docs/screens/touch-phone.webp) | ![The touch zones on a phone, in a browser that shows its bars](docs/screens/touch-browser.webp) |
 
-The drum only appears on devices played with fingers. With a mouse and keyboard it
-stays hidden. It can be switched off in Settings; the screen still plays.
+The zones are coloured only on devices played with fingers. They can be switched off
+in Settings; the screen still plays.
 
 Settings hold music and drum volume, note speed, a timing offset with a tap-along
-measuring tool, auto play and the on-screen drum. Settings and personal records are kept
+measuring tool, auto play and the touch zones. Settings and personal records are kept
 in this browser's local storage.
 
 ## Your music
@@ -206,7 +212,7 @@ folder on any static host.
 | `src/game/renderer.js` | The play screen |
 | `src/game/layout.js` | Where everything sits, and how the stage fills a window |
 | `src/game/art/` | Everything drawn: painted sprites (`sprites.js`), effects, scenery, stand-ins |
-| `src/game/touchDrum.js`, `src/ui/TouchDrum.jsx` | The drum on touch screens: where it sits, what a touch plays |
+| `src/game/input.js`, `src/ui/TouchZones.jsx` | Keys and touches: what each one plays, and the four zones a finger sees |
 | `src/game/audio.js` | Song clock and synthesised drum sounds |
 | `src/game/songs/` | The built-in songs as scores, and the synthesiser that plays them |
 | `src/game/features.js` | Listens to a song: tempo, beat grid, attacks per band |

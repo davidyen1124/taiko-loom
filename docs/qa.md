@@ -10,7 +10,7 @@ it was then.
 
 | Suite | Command | Result |
 | --- | --- | --- |
-| Rules engine, analyser, built-in songs, stage layout and artwork | `npm test` | 57 passed |
+| Rules engine, analyser, built-in songs, stage layout and artwork | `npm test` | 55 passed |
 | Hosting worker and build output | `npm run build && npm run test:sites` | 4 passed |
 
 ## Checked by hand
@@ -51,7 +51,7 @@ server and the analysis server the game then had. Viewports: 1280 x 720, 844 x 3
 | Results | Play again and song select, by key and by click | Pass |
 | Offline | Backend stopped: status shown, upload analysed on device | Pass after fix 6 |
 | Phone sideways | Stage letterboxed, nothing scrolls | Pass |
-| Phone upright | Rotate hint shown, can be dismissed | Pass |
+| Phone upright | Rotate hint shown | Pass |
 | Touch | Four zones fill the screen; taps map to ka, don, don, ka | Pass |
 | Touch | Tap on the pause button is not counted as a drum hit | Pass |
 
@@ -98,13 +98,9 @@ the development build and the static build served under `/taiko-nights/`.
 | Title | Yoru whole at 16:9, 4:3, 21:9 and on a phone; logo and start button over open sky | Pass after fix 23 |
 | Menus | Painted lane behind song select; banners and text stay readable | Pass |
 | Touch drum | Hidden with mouse and keyboard at 1280 x 720 and 1920 x 1080 | Pass |
-| Touch drum | Shown on phones and tablets, sideways and upright, in both browsers | Pass |
 | Touch drum | Real touches: skin left and right, rim left and right, beside the drum, above the drum | Pass, 6 of 6 each |
 | Touch drum | Two fingers together play both hands | Pass |
 | Touch drum | Pause button is not a drum hit; the drum steps aside while paused | Pass |
-| Touch drum | Sideways it never covers the lane; upright it never runs off the screen | Pass after fix 24, automated |
-| Touch drum | With an iPhone's safe areas (21 px below, 47 px at each end): head ends 51 px above the bottom edge | Pass after fix 26 |
-| Touch drum | iPhone SE and a 915 x 412 Android phone, which keep no strip: head ends 29 and 30 px above the edge | Pass after fix 26 |
 | Notch | Score, pause button, gauge, title and song select arrows keep clear of both ends | Pass after fix 26 |
 | Home screen | Manifest and icons are served; the page asks to open full screen | Pass |
 | Touch drum | Festival friends line up behind the drum instead of under it | Pass |
@@ -112,6 +108,37 @@ the development build and the static build served under `/taiko-nights/`.
 | Whole site | The 35 end-to-end checks of the static build, in both browsers | Pass, 70 of 70 |
 | Drawing cost | WebKit, busiest part of the hardest song at 2560 x 1440: 3.2 ms a frame | Pass |
 | Drawing cost | Chromium without a graphics card: the same with every picture blocked as with them | No change |
+
+## The phone layout
+
+Tested on 2026-09-28 with Playwright driving headless WebKit and Chromium against the
+development build, with a finger for a pointer. The picture of a drum was replaced by
+four touch zones after it was played on a real iPhone in Safari, where the window is
+about 844 x 291: see fix 29. The rows about the touch drum in the section above
+describe what was there before.
+
+Windows: 844 x 291 (iPhone in Safari, bars showing), 844 x 390 and 932 x 430 (iPhone
+from the home screen, with its safe areas put in by hand), 667 x 375 (iPhone SE),
+915 x 412 (Android), 1180 x 820 (tablet).
+
+| Area | What was done | Result |
+| --- | --- | --- |
+| Whole display | Title, song select, play and results fill every window above from edge to edge: no bars at the sides, no strip below | Pass after fix 29, automated |
+| Touch zones | Real touches at eight places across the display and four heights, from the sky band to the last row: ka, don, don, ka, by place alone | Pass, 31 of 31 |
+| Touch zones | One pixel either side of each border plays the zone it is in | Pass, automated |
+| Touch zones | A touch lights its zone; Yoru and the panel drum show the same hand and sound | Pass |
+| Touch zones | Colour begins under the lane and nowhere covers the notes, the gauge or the score | Pass |
+| Touch zones | Words sit above the strip an iPhone keeps along the bottom, and fade after the first bars | Pass |
+| Touch zones | Pause button is not a drum hit; the zones step aside while paused | Pass |
+| Touch zones | Not shown with a mouse and keyboard | Pass |
+| Lane | On a window of 844 x 291 the lane and its notes are drawn 29% larger than the design grid would draw them | Pass, automated |
+| Sky band | Drawn at 60% on such a window, in full on a tablet and on a 16:9 phone; gauge, title and Yoru keep their places in it; notes fly to the soul orb where it now is | Pass |
+| Sky band | Yoru stands clear of the pause button, which is 44 px across on a phone | Pass, automated |
+| Upright | A phone or tablet held upright is asked to turn. Turned in the middle of a song, the song pauses; turned back, the pause menu is waiting | Pass |
+| Keys | Names of keys are not shown on a device played with fingers; How to play explains the zones instead | Pass |
+| Title | Yoru's head is whole on a window as wide as 844 x 291 (the feet are not) | Pass after fix 31 |
+| Desktop | Play screen at 1280 x 720, 1862 x 1017, 1024 x 768 and 2560 x 1080 compared pixel by pixel with the version before: identical but for the judgement word of fix 30 | Pass |
+| Whole site | The 36 end-to-end checks of the static build, in both browsers | Pass, 72 of 72 |
 
 ## Without a server
 
@@ -146,7 +173,7 @@ server heard 112 BPM and a shuffle; the browser heard it correctly.
 | Feel | A 60 BPM song charted at 120 has nothing between its beats, and is not called a shuffle | Pass after fix 28, automated |
 | Whole site | 36 end-to-end checks in each browser | Pass, 72 of 72 |
 | Cut-off text | Audit at seven window shapes in both browsers | Pass, 98 of 98 screens |
-| Touch drum | Real touches in both browsers, sideways and upright | Pass, 36 of 36 |
+| Touch drum | Real touches in both browsers | Pass |
 
 ## Bugs found and fixed during QA
 
@@ -230,6 +257,23 @@ Causes and fixes:
     all three thirds of the beat are played. Found by comparing the two analysers.
 28. **A song with nothing between its beats could be called a shuffle,** on the
     strength of a few stray attacks. It now takes a real share of the song's attacks.
+
+29. **On a phone the touch drum did not look like a drum, and much of the display was
+    wasted.** Reported from a real iPhone in Safari. The drum was a painting made to be
+    seen from above, stretched into a flat oval on top of a block of barrel; the stage
+    stopped short of both ends of the display; a striped strip ran along the bottom; and
+    the sky band took a quarter of a window only 291 px high. A round drum was painted
+    and tried in its place, and measured: on such a window its hide is two fifths of
+    the display where thumbs reach it. So the drum is gone. The whole display is played,
+    in four zones that are only light, the stage fills any phone from edge to edge, and
+    the rows the drum took went to the lane. The upright layout was removed: the game
+    is played sideways.
+30. **The judgement word (良, 可, 不可) was cut off on every device.** It is drawn just
+    above the lane and was clipped to the lane, so only its feet showed. Found while
+    reading the drawing code for fix 29. It is now drawn after the clip is lifted.
+    The burst of a popped balloon had the same fault.
+31. **On a very wide window the title picture lost the top of Yoru's head.** The band
+    that is shown now starts above the leaf, and gives up the feet instead.
 
 The audit measures each text's letters, grows that box by half the outline width, and
 tests it against every ancestor that clips. It switches animations off while it
