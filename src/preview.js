@@ -1,7 +1,8 @@
 // Plays a short loop of the highlighted song on the song select screen.
 import { apiUrl } from './api.js';
 import { audio } from './game/audio.js';
-import { renderDemoAudio } from './game/demoSong.js';
+import { renderDemoAudio } from './game/songs/index.js';
+import { localAudioUrl } from './library.js';
 
 const LENGTH = 14;
 let current = null;
@@ -35,10 +36,13 @@ export async function startPreview(song, volume) {
   const from = Math.max(0, Math.min(song.gogo ?? song.duration * 0.3, song.duration - LENGTH - 1));
   const level = volume ** 1.6 * 0.8;
 
-  if (song.source === 'server') {
+  if (song.source !== 'demo') {
+    // streamed, so a long song is not decoded whole just to hear a few bars
+    const address = song.source === 'server' ? apiUrl(`/api/songs/${song.id}/audio`) : await localAudioUrl(song.id).catch(() => null);
+    if (mine !== token || !address) return;
     const element = new Audio();
     element.preload = 'auto';
-    element.src = apiUrl(`/api/songs/${song.id}/audio`);
+    element.src = address;
     element.volume = 0;
     const begin = () => {
       if (mine !== token) return;
@@ -57,7 +61,7 @@ export async function startPreview(song, volume) {
     return;
   }
 
-  const buffer = song.source === 'demo' ? await renderDemoAudio() : song.buffer;
+  const buffer = await renderDemoAudio(song.id).catch(() => null);
   if (mine !== token || !buffer) return;
   const context = audio.context;
   const gain = context.createGain();

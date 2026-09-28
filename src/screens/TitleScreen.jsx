@@ -3,7 +3,7 @@ import { Backdrop } from '../ui/Backdrop.jsx';
 import { audio } from '../game/audio.js';
 import { padForKey } from '../game/input.js';
 
-export function TitleScreen({ online, onStart }) {
+export function TitleScreen({ online, backend, onStart }) {
   useEffect(() => {
     const down = async event => {
       if (event.repeat || event.ctrlKey || event.metaKey || event.altKey) return;
@@ -42,8 +42,10 @@ export function TitleScreen({ online, onStart }) {
         <li className="don"><kbd>J</kbd>ドン</li>
         <li className="ka"><kbd>K</kbd>カッ</li>
       </ul>
-      <p className={`title-status ${online ? 'online' : 'offline'}`}>
-        <i />{online === null ? 'Looking for the analysis server…' : online ? 'Analysis server connected' : 'Analysis server offline · songs are analysed on this device'}
+      <p className={`title-status ${!backend ? 'local' : online ? 'online' : 'offline'}`}>
+        <i />{!backend ? 'Your songs are analysed in your browser · nothing is uploaded'
+          : online === null ? 'Looking for the analysis server…'
+            : online ? 'Analysis server connected' : 'Analysis server offline · songs are analysed in your browser'}
       </p>
     </section>
   );

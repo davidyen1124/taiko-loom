@@ -15,7 +15,7 @@ import { startPreview, stopPreview } from '../preview.js';
 
 const HUES = ['#e8548e', '#2e7fd1', '#2fa36b', '#8a5bd6', '#e07a1f', '#1fa3a3', '#c8402f'];
 const hueFor = song => {
-  if (song.source === 'demo') return '#f2452b';
+  if (song.colour) return song.colour;
   let sum = 0;
   for (const char of song.id) sum = (sum * 31 + char.charCodeAt(0)) >>> 0;
   return HUES[sum % HUES.length];
@@ -25,7 +25,7 @@ const BAR = 92;          // closed banner width
 const GAP = 14;
 const OPEN = 560;        // open banner width
 
-export function SongSelect({ songs, records, settings, online, busy, initial, onPlay, onAdd, onDelete, onSettings, onHelp, onBack }) {
+export function SongSelect({ songs, records, settings, online, backend, busy, initial, onPlay, onAdd, onDelete, onSettings, onHelp, onBack }) {
   const stage = useStage();
   const items = [{ id: 'add', add: true }, ...songs];
   const [index, setIndex] = useState(() => Math.max(1, items.findIndex(item => item.id === initial)));
@@ -135,7 +135,7 @@ export function SongSelect({ songs, records, settings, online, busy, initial, on
         <h1><span>曲をえらぶ</span>Song select</h1>
         <div className="select-tools">
           {settings.auto && <span className="chip auto"><Bot size={18} strokeWidth={2.8} />Auto play</span>}
-          <span className={`chip ${online ? 'online' : 'offline'}`}><i />{online ? 'Server connected' : 'Server offline'}</span>
+          <span className={`chip ${!backend ? 'local' : online ? 'online' : 'offline'}`}><i />{!backend ? 'Analysed in your browser' : online ? 'Server connected' : 'Server offline'}</span>
           <button className="tool" aria-label="How to play" onClick={onHelp}><CircleHelp size={26} strokeWidth={2.6} /></button>
           <button className="tool" aria-label="Settings" onClick={onSettings}><Settings2 size={26} strokeWidth={2.6} /></button>
         </div>

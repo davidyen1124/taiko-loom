@@ -10,7 +10,7 @@ import { HelpDialog } from './ui/HelpDialog.jsx';
 import { UploadDialog } from './ui/UploadDialog.jsx';
 import { Mascot } from './ui/icons.jsx';
 import { audio } from './game/audio.js';
-import { renderDemoAudio } from './game/demoSong.js';
+import { FIRST_SONG, renderDemoAudio } from './game/songs/index.js';
 import { loadFonts } from './fonts.js';
 import { loadPlates } from './game/art/plates.js';
 import { loadAudio, loadShelf, loadSong, removeSong } from './library.js';
@@ -20,7 +20,7 @@ import './styles.css';
 
 export function App() {
   const [screen, setScreen] = useState('title');
-  const [shelf, setShelf] = useState({ online: null, songs: [] });
+  const [shelf, setShelf] = useState({ online: null, backend: true, songs: [] });
   const [settings, setSettings] = useState(loadSettings);
   const [records, setRecords] = useState(loadRecords);
   const [dialog, setDialog] = useState(null);           // settings | help | upload
@@ -29,7 +29,7 @@ export function App() {
   const [session, setSession] = useState(null);         // { song, buffer, difficulty }
   const [result, setResult] = useState(null);
   const [outcome, setOutcome] = useState(null);
-  const [focus, setFocus] = useState('demo-lantern-parade');
+  const [focus, setFocus] = useState(FIRST_SONG);
   const [, setPlates] = useState(false);
   const played = useRef(settings);
 
@@ -43,7 +43,7 @@ export function App() {
     loadFonts();
     loadPlates().then(() => setPlates(true));
     refresh();
-    renderDemoAudio().catch(() => {});
+    renderDemoAudio(FIRST_SONG).catch(() => {});
   }, [refresh]);
 
   useEffect(() => {
@@ -99,6 +99,7 @@ export function App() {
     setDialog(null);
     await refresh();
     setFocus(song.id);
+    if (song.saved === false) setError('This browser would not save the song, so it stays until you close the page.');
   }, [refresh]);
 
   const remove = useCallback(async song => {
@@ -117,10 +118,10 @@ export function App() {
 
   return (
     <Stage>
-      {screen === 'title' && <TitleScreen online={shelf.online} onStart={() => { setScreen('select'); refresh(); }} />}
+      {screen === 'title' && <TitleScreen online={shelf.online} backend={shelf.backend} onStart={() => { setScreen('select'); refresh(); }} />}
       {screen === 'select' && (
         <SongSelect
-          songs={shelf.songs} records={records} settings={settings} online={Boolean(shelf.online)} busy={Boolean(dialog || loading)} initial={focus}
+          songs={shelf.songs} records={records} settings={settings} online={Boolean(shelf.online)} backend={shelf.backend} busy={Boolean(dialog || loading)} initial={focus}
           onPlay={play} onAdd={() => setDialog('upload')} onDelete={remove}
           onSettings={() => { audio.jingle('confirm'); setDialog('settings'); }} onHelp={() => { audio.jingle('confirm'); setDialog('help'); }}
           onBack={() => { stopPreview(); setScreen('title'); }}
@@ -135,7 +136,7 @@ export function App() {
 
       {dialog === 'settings' && <SettingsDialog settings={settings} onChange={setSettings} onClose={() => setDialog(null)} />}
       {dialog === 'help' && <HelpDialog onClose={() => setDialog(null)} />}
-      {dialog === 'upload' && <UploadDialog online={Boolean(shelf.online)} onClose={() => setDialog(null)} onAdded={added} />}
+      {dialog === 'upload' && <UploadDialog online={Boolean(shelf.online)} backend={shelf.backend} onClose={() => setDialog(null)} onAdded={added} />}
 
       {loading && (
         <div className="loading" role="status" aria-live="polite">

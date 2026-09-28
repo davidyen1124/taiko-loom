@@ -1,6 +1,9 @@
 // Painted background plates. They are optional: every scene has a
 // code-drawn fallback, so the game still renders if an image fails to load.
-const SOURCES = { festival: '/art/festival.webp', title: '/art/title.webp' };
+// Addresses follow the build's base, so the game also runs from a sub-folder
+// such as a GitHub Pages project site.
+const BASE = import.meta.env?.BASE_URL ?? '/';
+const SOURCES = { festival: `${BASE}art/festival.webp`, title: `${BASE}art/title.webp` };
 const images = {};
 let loading = null;
 
