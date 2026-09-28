@@ -43,7 +43,6 @@ export function TitleScreen({ onStart }) {
         <li className="don"><kbd>J</kbd>ドン</li>
         <li className="ka"><kbd>K</kbd>カッ</li>
       </ul>
-      <p className="title-status"><i />Your songs are analysed in your browser · nothing is uploaded</p>
     </section>
   );
 }

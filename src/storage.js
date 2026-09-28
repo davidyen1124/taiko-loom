@@ -3,6 +3,7 @@ import { CROWN_ORDER } from './game/rules.js';
 
 const SETTINGS_KEY = 'taiko-nights-settings-v2';
 const RECORDS_KEY = 'taiko-nights-records-v2';
+const SEEN_KEY = 'taiko-nights-seen-v1';
 
 export const DEFAULT_SETTINGS = {
   music: 0.8,        // 0..1
@@ -73,3 +74,7 @@ export function forgetSong(songId) {
   for (const key of Object.keys(records)) if (key.startsWith(`${songId}:`)) delete records[key];
   write(RECORDS_KEY, records);
 }
+
+// Things that are shown once, such as How to play before the first song.
+export const hasSeen = name => Boolean(read(SEEN_KEY, {})[name]);
+export const markSeen = name => write(SEEN_KEY, { ...read(SEEN_KEY, {}), [name]: true });
