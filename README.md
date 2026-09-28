@@ -186,8 +186,7 @@ Tests synthesise their own audio.
 - Crowns: silver for a clear, gold for a full combo, rainbow for all 良.
 - Score stamps: 灯 500k, 花 700k, 月 850k, 祭 950k, 天 1,000,000.
 
-These follow the conventions of the genre, researched in
-[docs/references.md](docs/references.md). The score stamps, the artwork and the chart
+These follow the conventions of the genre. The score stamps, the artwork and the chart
 generator are this game's own.
 
 ## Test
@@ -196,12 +195,8 @@ generator are this game's own.
 npm test
 ```
 
-```bash
-npm run build && npm run test:sites
-```
-
-57 tests of the rules, the analyser, the built-in songs, the layout and the artwork,
-and 4 of the hosting build. What was checked in real browsers is recorded in
+64 tests of the rules, the analyser, the built-in songs, the layout, the artwork and
+the pacing of frames. What was checked in real browsers is recorded in
 [docs/qa.md](docs/qa.md).
 
 ## Publish
@@ -233,19 +228,15 @@ folder on any static host.
 | `src/game/art/` | Everything drawn: painted sprites (`sprites.js`), effects, scenery, stand-ins |
 | `src/game/input.js`, `src/ui/TouchZones.jsx` | Keys and touches: what each one plays, and the four zones a finger sees |
 | `src/game/audio.js` | Song clock and synthesised drum sounds |
+| `src/game/pacer.js` | How many pixels are drawn, and when to draw fewer |
 | `src/game/songs/` | The built-in songs as scores, and the synthesiser that plays them |
 | `src/game/features.js` | Listens to a song: tempo, beat grid, attacks per band |
 | `src/game/charting.js` | Writes the Easy, Medium and Hard charts |
 | `src/library.js`, `src/songStore.js` | The song shelf, and your songs saved in this browser |
 | `src/screens/`, `src/ui/` | Title, song select, play, results, dialogs |
 | `public/art/` | Painted backgrounds, the drum, and the sprite atlases |
-| `tools/art/` | How the pictures were made: prompts, generated sheets, the cutter |
 | `src/dev/` | Development tools: sprite gallery and the cut-off text audit |
-| `docs/` | Art notes, genre references, QA record, screenshots |
+| `docs/` | Art notes, QA record, screenshots |
 
-`worker/`, `.openai/` and `scripts/prepare-sites-build.mjs` package the build for
-hosting. Any static host serves the whole game.
-
-The pictures were made with Python tools in `tools/art/`, run through
-[uv](https://github.com/astral-sh/uv). They are only needed to make new pictures,
-never to build or run the game.
+The repository holds the game and nothing else: one language, one build, no server.
+`npm run build` writes the whole site to `dist/`, and any static host serves it.

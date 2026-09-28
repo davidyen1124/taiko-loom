@@ -21,9 +21,6 @@ const frames = {
 export default defineConfig({
   // relative addresses, so one build runs at a domain root and in a sub-folder
   base: "./",
-  build: {
-    outDir: "dist/client",
-  },
   optimizeDeps: {
     include: ["react", "react-dom/client"],
   },

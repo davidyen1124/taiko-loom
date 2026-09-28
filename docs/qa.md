@@ -11,7 +11,7 @@ it was then.
 | Suite | Command | Result |
 | --- | --- | --- |
 | Rules engine, analyser, built-in songs, stage layout and artwork | `npm test` | 64 passed |
-| Hosting worker and build output | `npm run build && npm run test:sites` | 4 passed |
+| The site builds | `npm run build` | Pass |
 
 ## Checked by hand
 
