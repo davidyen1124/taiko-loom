@@ -9,7 +9,8 @@ start-up instructions when you can run it.
 - `npm run dev -- --port 4173` starts the game. `/api` is proxied to the backend.
 - `npm run build:pages && npm run preview:pages` serves the public site as GitHub
   Pages will, at http://localhost:4174/taiko-nights/. It has no backend.
-- `/?gallery` shows every sprite. `/?gallery=sheet` renders the character model sheet.
+- `/?gallery` shows every sprite in motion. `/?gallery=sheet` draws every painted
+  sprite with its name: the model sheet kept in `docs/art`.
 - In development `await __auditText()` lists any text that is cut off on the screen
   you are looking at. Run it on every screen you touch, at more than one window shape.
 - In development `window.__taiko` exposes `{ renderer, game, audio }` while a song is
@@ -22,7 +23,10 @@ start-up instructions when you can run it.
    Pages workflow refuses to publish a build that contains an audio file.
 2. **All artwork and music are original.** Do not add or imitate characters, sprites,
    logos, sounds, songs or charts from any existing game or recording. A new built-in
-   song is a new composition, written as a score in `src/game/songs/`. New art that shows Yoru must match
+   song is a new composition, written as a score in `src/game/songs/`. A new picture
+   is generated as `docs/art/README.md` describes: from the canonical picture, on a
+   sheet, then cut by `tools/art/cut.py`. Generated pixels are never redrawn by hand
+   or in code, and pictures carry no writing. New art that shows Yoru must match
    `docs/art/yoru-model-sheet.png`; the checklist is in `docs/art/README.md`.
 3. **The stage fills the window. Never letterbox it.** The design grid is 1280 x 720.
    A wider window adds columns, a taller one adds rows (`stageFor` and `setStage` in
@@ -48,7 +52,14 @@ start-up instructions when you can run it.
 8. **The game must work with no server.** The public site is static. Anything new has
    to work when `VITE_BACKEND=off`, and no address may start with `/`: use
    `import.meta.env.BASE_URL` for files in `public/`.
-9. **Built-in songs are synthesised in plain JavaScript,** not with the Web Audio
+9. **Every picture has a stand-in.** Painted sprites and plates load after the first
+   frame and may fail to load. Draw through `drawSprite`, which says whether it
+   drew, and keep the code-drawn figure behind it.
+10. **The touch drum belongs to fingers.** It shows when the device's main pointer
+   is a finger, or once the screen has been touched, and never for a mouse. Every
+   touch plays something: the skin is don, everything else is ka. Its geometry lives
+   in `src/game/touchDrum.js` and is tested; the painted skin is 69% of the drum.
+11. **Built-in songs are synthesised in plain JavaScript,** not with the Web Audio
    graph, which took 10 to 28 seconds a song in Chrome and Safari. `npm test` renders
    every song and checks its level, its tuning and that it is in time with its chart.
 
@@ -70,8 +81,11 @@ GitHub Pages is published by `.github/workflows/pages.yml` from `dist/pages`.
 
 ## Design decisions on record
 
-- Notes are drum heads seen from above with a painted swirl. They have no faces.
+- Notes are drum heads seen from above with a three-armed swirl crest. They have no
+  faces.
 - The mascot is Yoru, a tanuki who drums on a belly drum. Five festival friends
-  (daruma, fox, lucky cat, paper lantern, rice cakes) join as the soul gauge fills.
+  (daruma, fox, lucky cat, paper lantern, rice dumplings) join as the soul gauge
+  fills. All are painted in one style: bold dark outline, soft cel shading.
+- Yoru shows what you played: the hand that struck, and skin or rim.
 - Score stamps are this game's own: 灯 花 月 祭 天.
 - Painted plates carry no text. Stall lettering and lantern glow are drawn in code.
