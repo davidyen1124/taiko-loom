@@ -7,8 +7,10 @@
     "dev": "vite",
     "api": "uv run --project backend uvicorn taiko_backend.main:app --host 127.0.0.1 --port 8000",
     "build": "vite build && node scripts/prepare-sites-build.mjs",
+    "build:pages": "VITE_BACKEND=off vite build --outDir dist/pages",
     "preview": "vite preview",
-    "test": "node --test tests/engine.test.mjs tests/analyze.test.mjs tests/layout.test.mjs",
+    "preview:pages": "vite preview --outDir dist/pages --base /taiko-nights/ --port 4174 --strictPort",
+    "test": "node --test tests/engine.test.mjs tests/analyze.test.mjs tests/songs.test.mjs tests/layout.test.mjs",
     "test:backend": "uv run --project backend pytest -q backend/tests",
     "test:sites": "node --test tests/sites-worker.test.mjs",
     "analyze": "uv run --project backend python scripts/analyze_track.py"

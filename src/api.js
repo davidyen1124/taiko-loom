@@ -1,7 +1,10 @@
 // Client for the analysis backend. All paths are relative, so the dev server
 // proxy and a same-origin deployment both work. Set VITE_API_BASE_URL to
-// point at a backend hosted elsewhere.
+// point at a backend hosted elsewhere, or VITE_BACKEND=off to build a site
+// with no backend at all, where every song is analysed in the browser.
 const BASE = (import.meta.env?.VITE_API_BASE_URL || '').replace(/\/$/, '');
+
+export const HAS_BACKEND = import.meta.env?.VITE_BACKEND !== 'off';
 
 export const apiUrl = path => `${BASE}${path}`;
 
@@ -32,6 +35,7 @@ async function request(path, options = {}, timeout = 8000) {
 }
 
 export async function health() {
+  if (!HAS_BACKEND) return false;
   try {
     const result = await request('/api/health', {}, 2500);
     return result?.status === 'ok';

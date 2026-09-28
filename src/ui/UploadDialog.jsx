@@ -1,7 +1,7 @@
-// Add a song: send it to the backend for analysis, or analyse it on this
-// device when the backend cannot be reached.
+// Add a song: send it to the backend for analysis, or analyse it in the
+// browser when there is no backend or it cannot be reached.
 import { useEffect, useRef, useState } from 'react';
-import { Upload, Music2, CircleAlert, WifiOff, FileAudio } from 'lucide-react';
+import { Upload, Music2, CircleAlert, WifiOff, FileAudio, ShieldCheck } from 'lucide-react';
 import { Dialog } from './Dialog.jsx';
 import { Mascot } from './icons.jsx';
 import * as api from '../api.js';
@@ -36,11 +36,13 @@ async function analyseOnDevice(file, names, report) {
     worker.onerror = () => { worker.terminate(); reject(new Error('Could not analyse this audio. Try another file.')); };
     worker.postMessage({ samples: mono, sampleRate: buffer.sampleRate, title: names.title || 'Untitled', artist: names.artist || 'Unknown artist' }, [mono.buffer]);
   });
+  report({ message: 'Saving to this device', progress: 0.92 });
+  const kept = await keepLocalSong(song, buffer, file);
   report({ message: 'Ready to play', progress: 1 });
-  return keepLocalSong(song, buffer);
+  return kept;
 }
 
-export function UploadDialog({ online, onClose, onAdded }) {
+export function UploadDialog({ online, backend, onClose, onAdded }) {
   const [file, setFile] = useState(null);
   const [names, setNames] = useState({ title: '', artist: '' });
   const [status, setStatus] = useState(null);      // { message, progress }
@@ -124,7 +126,8 @@ export function UploadDialog({ online, onClose, onAdded }) {
             <label htmlFor="song-artist">Artist<input id="song-artist" type="text" maxLength={120} placeholder="Read from the file" value={names.artist} onChange={event => setNames({ ...names, artist: event.target.value })} disabled={!file} /></label>
           </div>
           {error && <p className="notice error" role="alert"><CircleAlert size={20} strokeWidth={2.6} />{error}</p>}
-          {!online && <p className="notice"><WifiOff size={20} strokeWidth={2.6} />The analysis server is offline, so this song will be analysed on this device and kept until you close the page.</p>}
+          {!backend && <p className="notice"><ShieldCheck size={20} strokeWidth={2.6} />Your song is analysed in your browser and saved on this device. Nothing is uploaded.</p>}
+          {backend && !online && <p className="notice"><WifiOff size={20} strokeWidth={2.6} />The analysis server is offline, so this song will be analysed in your browser and saved on this device.</p>}
           <footer className="dialog-foot">
             <button className="button ghost" onClick={onClose}>Cancel</button>
             <button className="button primary" onClick={analyse} disabled={!file}><Music2 size={20} strokeWidth={2.8} />Analyse and add</button>

@@ -1,7 +1,9 @@
 # Taiko Nights
 
-A festival taiko rhythm game for the browser. Upload any song, the backend finds its
-beat and writes Easy, Medium and Hard charts, and you play it with four keys.
+A festival taiko rhythm game for the browser. Add any song, the game finds its beat
+and writes Easy, Medium and Hard charts, and you play it with four keys.
+
+**Play it now: https://davidyen1124.github.io/taiko-nights/**
 
 ![Go-Go Time during a song](docs/screens/play-gogo.webp)
 
@@ -10,7 +12,9 @@ beat and writes Easy, Medium and Hard charts, and you play it with four keys.
 | ![Drumroll with its hit counter](docs/screens/play-drumroll.webp) | ![Balloon note with hits remaining](docs/screens/play-balloon.webp) |
 
 Everything here is original: the code, the mascot (Yoru the tanuki), the festival
-friends, the notes and the built-in song. See [docs/art](docs/art/README.md).
+friends, the notes and the three built-in songs. See [docs/art](docs/art/README.md).
+
+![Song select with the three built-in songs](docs/screens/song-select.webp)
 
 The game fills the window at any shape, with no bars. A wider window makes the lane
 longer; a taller one adds sky above and a festival curtain below.
@@ -35,9 +39,22 @@ npm run dev -- --port 4173
 
 Open http://localhost:4173. The first `npm run api` installs the Python dependencies.
 
-The game also runs without the backend. The built-in song "Lantern Parade" is
-synthesised in the browser, and uploads fall back to a lighter analyser that runs on
-your device.
+The game also runs without the backend, which is how the public site works. The
+built-in songs are synthesised in the browser and your own songs are analysed there
+too. To run it that way locally, skip `npm run api`.
+
+## Built-in songs
+
+| Song | Tempo | Feel | Easy | Medium | Hard |
+| --- | --- | --- | --- | --- | --- |
+| Moonlit Koi | 100 | shuffle, for koto | ★1 | ★3 | ★5 |
+| Lantern Parade | 132 | straight, for festival flute | ★2 | ★4 | ★6 |
+| Raijin Rush | 168 | straight, for shamisen | ★4 | ★6 | ★8 |
+
+All three were written for this game. Each is a score in `src/game/songs/`: the
+melody, the bass and the three charts as plain data. A small synthesiser in the same
+folder plays the score sample by sample in a worker, which takes under a second. The
+repo and the site carry no audio files and nothing is sampled from a recording.
 
 ## Play
 
@@ -61,36 +78,59 @@ in this browser's local storage.
 ## Your music
 
 Choose **曲をついか / Add your music** on the song shelf and pick a file (MP3, WAV, FLAC,
-OGG or M4A, up to 100 MB and 15 minutes). The backend:
+OGG or M4A, up to 100 MB and 15 minutes). The song is analysed by the backend when
+one is running, and in your browser when there is none. Both follow the same steps:
 
-1. converts the upload to FLAC, the file the browser will play, so chart times and
-   playback share one sample-accurate timeline
-2. separates percussive sound and measures attacks overall, in the kick band and in
+1. decode the song (the backend also converts it to FLAC, the file the browser will
+   play, so chart times and playback share one sample-accurate timeline)
+2. separate percussive sound and measure attacks overall, in the kick band and in
    the high band
-3. tracks the beat, fits a steady grid to it, and checks that grid against tempos the
+3. track the beat, fit a steady grid to it, and check that grid against tempos the
    tracker commonly confuses (half, double, 3:2, 2:3)
-4. finds the downbeat from bass attacks and chord changes
-5. places notes on the grid: Easy on beats, Medium adds half-beats, Hard adds
+4. find the downbeat from bass attacks and chord changes
+5. place notes on the grid: Easy on beats, Medium adds half-beats, Hard adds
    quarter-beats in short runs
-6. assigns Don to bass-heavy attacks and Ka to bright ones
-7. turns the loudest sections into Go-Go Time, leads into them with a drumroll and
-   follows the first two with a balloon
+6. assign Don to bass-heavy attacks and Ka to bright ones
+7. turn the loudest sections into Go-Go Time, lead into them with a drumroll and
+   follow the first two with a balloon
 
-Songs live in `backend/data/`, which is ignored by git.
+Songs analysed by the backend live in `backend/data/`, which is ignored by git.
+
+### In the browser
+
+`src/game/features.js` and `src/game/charting.js` are the backend's `analysis.py` and
+`charting.py` rewritten in JavaScript, step for step. They run in a worker. The song
+never leaves your device: nothing is uploaded, and the chart and the file are saved in
+the browser's own storage (IndexedDB) so the song is still on the shelf next time.
+Removing a song deletes both.
+
+The same 3:57 song through both analysers:
+
+| | Backend | Browser |
+| --- | --- | --- |
+| Tempo | 126.0 | 126.0 |
+| Beats | 499 | 499, each within 3 ms of the backend's |
+| First bar line | 0.005 s | 0.005 s |
+| Go-Go sections | 4 | the same 4 |
+| Notes, Easy / Medium / Hard | 264 / 469 / 765 | 264 / 469 / 768 |
+| Notes in the same place | | 88% / 95% / 92% |
+| Time taken | 12 s | 1.4 to 3 s |
 
 **Audio is never committed.** `.gitignore` excludes every common audio extension and
 the backend's data folder. Tests synthesise their own audio.
 
 ### Accuracy
 
-Measured on synthetic drum loops of known tempo (`npm run test:backend`):
+Measured on synthetic drum loops of known tempo (`npm run test:backend` and
+`npm test`):
 
-| Check | Result |
-| --- | --- |
-| Tempo at 96, 110, 120, 138, 150 and 165 BPM | within 0.05 BPM |
-| Beat placement | within 8 ms of the real attack |
-| Shuffle rhythm | detected, keeps its own tempo |
-| 70 BPM song | charted at 140 so the grid stays playable |
+| Check | Backend | Browser |
+| --- | --- | --- |
+| Tempo at 96 to 165 BPM | within 0.05 BPM | within 0.3 BPM |
+| Beat placement | within 8 ms of the real attack | within 6 ms, 4 ms on average |
+| Shuffle rhythm | detected, keeps its own tempo | detected |
+| 70 BPM song | charted at 140 so the grid stays playable | the same rule |
+| Audio at 22.05, 32, 44.1, 48 and 96 kHz | converted to one rate | same timing at each |
 
 Real music is harder than drum loops. Songs with a tempo that drifts fall back to the
 tracked beats instead of a fixed grid. Songs with no clear pulse are rejected with a
@@ -153,8 +193,26 @@ npm run test:backend
 npm run build && npm run test:sites
 ```
 
-29 engine, analyser and layout tests, 29 backend tests, 4 hosting tests. What was checked by
-hand in the browser is recorded in [docs/qa.md](docs/qa.md).
+42 engine, analyser, song and layout tests, 29 backend tests, 4 hosting tests. What was
+checked in real browsers is recorded in [docs/qa.md](docs/qa.md).
+
+## Publish
+
+Every push to `main` builds the static site and publishes it to GitHub Pages
+(`.github/workflows/pages.yml`). The workflow runs the tests first and refuses to
+publish if the build contains an audio file.
+
+```bash
+npm run build:pages
+```
+
+```bash
+npm run preview:pages
+```
+
+The second command serves the build at http://localhost:4174/taiko-nights/, under the
+same path GitHub Pages uses. The build uses relative addresses, so it runs from any
+folder. `VITE_BACKEND=off` is what tells the game there is no server to look for.
 
 ## Layout
 
@@ -166,8 +224,10 @@ hand in the browser is recorded in [docs/qa.md](docs/qa.md).
 | `src/game/layout.js` | Where everything sits, and how the stage fills a window |
 | `src/game/art/` | All drawing code: notes, mascot, dancers, HUD, effects, scenery |
 | `src/game/audio.js` | Song clock and synthesised drum sounds |
-| `src/game/demoSong.js` | The built-in song and its charts, as data |
-| `src/game/analyze.js` | The on-device fallback analyser |
+| `src/game/songs/` | The built-in songs as scores, and the synthesiser that plays them |
+| `src/game/features.js` | The browser analyser: tempo, beat grid, attacks per band |
+| `src/game/charting.js` | The browser chart writer, matching the backend's |
+| `src/library.js`, `src/songStore.js` | The song shelf, and songs saved in this browser |
 | `src/screens/`, `src/ui/` | Title, song select, play, results, dialogs |
 | `backend/src/taiko_backend/` | `analysis.py` listens, `charting.py` writes charts, `main.py` serves |
 | `public/art/` | Two painted background plates |
@@ -175,5 +235,5 @@ hand in the browser is recorded in [docs/qa.md](docs/qa.md).
 | `docs/` | Art notes, genre references, QA record, screenshots |
 
 `worker/`, `.openai/` and `scripts/prepare-sites-build.mjs` package the static build
-for hosting. A static host serves the game and the on-device analyser; the backend
-needs its own host.
+for hosting. A static host serves the whole game, analyser included; the backend is
+optional and needs its own host.
