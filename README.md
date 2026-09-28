@@ -96,6 +96,21 @@ on an iPhone). It then opens without the browser's bars.
 The zones are coloured only on devices played with fingers. They can be switched off
 in Settings; the screen still plays.
 
+### If the game does not run smoothly
+
+Add `?fps` to the address. A line at the top of the display then reads how many
+frames a second are being drawn, the longest wait for a frame in the last five
+seconds, and how large the picture is.
+
+The game looks after itself where it can. A phone draws two device pixels for each
+CSS pixel, not three. If frames keep arriving late, the picture is drawn smaller,
+step by step, until they arrive on time. The song's clock runs on the display's own
+clock and is only steered by the audio hardware, so notes move evenly even where the
+hardware tells its time in long steps, as some phones and wireless headphones do.
+
+One thing the game cannot change: an iPhone in Low Power Mode draws every web page at
+30 frames a second. The line reads `30 fps` and `display holds its own rate` then.
+
 Settings hold music and drum volume, note speed, a timing offset with a tap-along
 measuring tool, auto play and the touch zones. Settings and personal records are kept
 in this browser's local storage.

@@ -1,6 +1,7 @@
 // Animated scenery behind the menus. It always covers the whole stage.
 import { useCallback } from 'react';
 import { Art } from './Art.jsx';
+import { fingers } from './device.js';
 import { useStage } from './Stage.jsx';
 import { drawDancers, DANCERS } from '../game/art/dancers.js';
 import { Effects } from '../game/art/effects.js';
@@ -113,5 +114,8 @@ export function Backdrop({ variant = 'select', mood = 'happy', bpm = 120 }) {
       drawGarland(c, time, width);
     }
   }, [variant, mood, bpm, width, height]);
-  return <Art className="backdrop" width={width} height={height} draw={draw} animate />;
+  // A painted backdrop only drifts. On a phone it is painted half as often,
+  // which leaves the display, and the battery, to what the player is doing.
+  const slow = fingers() && variant !== 'results';
+  return <Art className="backdrop" width={width} height={height} draw={draw} animate cover rate={slow ? 30 : 60} />;
 }

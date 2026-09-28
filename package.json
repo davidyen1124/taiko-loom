@@ -8,7 +8,7 @@
     "build": "vite build && node scripts/prepare-sites-build.mjs",
     "preview": "vite preview",
     "preview:pages": "vite preview --base /taiko-nights/ --port 4174 --strictPort",
-    "test": "node --test tests/engine.test.mjs tests/analyze.test.mjs tests/songs.test.mjs tests/layout.test.mjs tests/art.test.mjs",
+    "test": "node --test tests/engine.test.mjs tests/analyze.test.mjs tests/songs.test.mjs tests/layout.test.mjs tests/art.test.mjs tests/pace.test.mjs",
     "test:sites": "node --test tests/sites-worker.test.mjs"
   },
   "dependencies": {
