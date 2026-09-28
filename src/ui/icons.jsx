@@ -1,14 +1,24 @@
 // Small pieces of artwork used by the menus.
-import { useCallback } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Art } from './Art.jsx';
 import { drawIcon } from '../game/art/hud.js';
 import { drawNote } from '../game/art/notes.js';
 import { drawMascot } from '../game/art/mascot.js';
+import { drawSprite, hasSprite, onSprites } from '../game/art/sprites.js';
 import { LEVELS } from '../game/rules.js';
 
+// True once the painted sprites have arrived.
+export function usePainted(atlas, id) {
+  const [painted, setPainted] = useState(() => hasSprite(atlas, id));
+  useEffect(() => onSprites(() => setPainted(hasSprite(atlas, id))), [atlas, id]);
+  return painted;
+}
+
+// The emblem of a difficulty. Painted, it is a complete round badge.
 export function LevelIcon({ level, size = 44 }) {
-  const draw = useCallback(c => drawIcon(c, LEVELS[level].icon, size / 2, size / 2, size * 0.42), [level, size]);
-  return <Art width={size} height={size} draw={draw} />;
+  const painted = usePainted('hud', LEVELS[level].icon);
+  const draw = useCallback(c => drawIcon(c, LEVELS[level].icon, size / 2, size / 2, painted ? size / 2 : size * 0.42, { badge: true }), [level, size, painted]);
+  return <Art width={size} height={size} draw={draw} className={painted ? 'painted' : ''} />;
 }
 
 export function NoteIcon({ type, size = 64 }) {
@@ -32,7 +42,7 @@ export function Mascot({ size = 200, mood = 'idle', bpm = 120, drumming = false 
     const left = drumming ? Math.max(0, 1 - ((beats % 2) * 3)) : 0;
     const right = drumming ? Math.max(0, 1 - (((beats + 1) % 2) * 3)) : 0;
     drawMascot(c, size * 0.49, size * 0.97, size / 300, {
-      bob: Math.max(0, 1 - beat * 2.6), left, right, mood, time, blink: time % 3.7 < 0.12,
+      bob: Math.max(0, 1 - beat * 2.6), left, right, mood, time, beats, blink: time % 3.7 < 0.12,
       jump: mood === 'happy' ? Math.abs(Math.sin(beats * Math.PI)) * size * 0.06 : 0,
     });
   }, [size, mood, bpm, drumming]);
@@ -46,7 +56,10 @@ const CROWNS = {
 };
 
 export function Crown({ kind, size = 40 }) {
+  const painted = usePainted('hud', `crown-${kind}`);
+  const draw = useCallback(c => drawSprite(c, 'hud', `crown-${kind}`, size / 2, size * 0.4, size), [kind, size]);
   if (!kind) return <span className="crown crown-empty" style={{ width: size, height: size * 0.8 }} aria-label="No crown yet" />;
+  if (painted) return <Art className={`crown crown-${kind}`} width={size} height={size * 0.8} draw={draw} label={`${kind} crown`} />;
   const [light, base, dark] = CROWNS[kind];
   const id = `crown-${kind}`;
   return (

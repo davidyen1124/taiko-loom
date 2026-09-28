@@ -12,7 +12,10 @@ and writes Easy, Medium and Hard charts, and you play it with four keys.
 | ![Drumroll with its hit counter](docs/screens/play-drumroll.webp) | ![Balloon note with hits remaining](docs/screens/play-balloon.webp) |
 
 Everything here is original: the code, the mascot (Yoru the tanuki), the festival
-friends, the notes and the three built-in songs. See [docs/art](docs/art/README.md).
+friends, the notes and the three built-in songs. The characters, notes, drum and
+backgrounds are painted; how they were made is in [docs/art](docs/art/README.md).
+
+![Every painted sprite in the game](docs/art/model-sheet.webp)
 
 ![Song select with the three built-in songs](docs/screens/song-select.webp)
 
@@ -68,11 +71,25 @@ repo and the site carry no audio files and nothing is sampled from a recording.
 | `Esc` | Pause |
 
 Menus are played like the drum: `D` `K` move, `F` `J` confirm, `Esc` goes back. Arrow
-keys and Enter work too. On a touch screen the whole display is the drum: the outer
-fifths are the rim, the middle is the face.
+keys and Enter work too.
+
+### On a phone or tablet
+
+A taiko appears on screen. Tap its skin for ドン and its rim for カッ; the left and
+right halves are your two hands, so two fingers together play a big note. Nothing is
+wasted: a tap anywhere off the skin counts as the rim. Held sideways, the drum rises
+from the bottom edge and the festival friends dance behind it. Held upright, the
+stage sits at the top and the whole drum sits under it.
+
+| Sideways | Upright |
+| --- | --- |
+| ![The drum on a phone held sideways](docs/screens/touch-sideways.webp) | ![The drum on a phone held upright](docs/screens/touch-upright.webp) |
+
+The drum only appears on devices played with fingers. With a mouse and keyboard it
+stays hidden. It can be switched off in Settings; the screen still plays.
 
 Settings hold music and drum volume, note speed, a timing offset with a tap-along
-measuring tool, auto play and the touch guide. Settings and personal records are kept
+measuring tool, auto play and the on-screen drum. Settings and personal records are kept
 in this browser's local storage.
 
 ## Your music
@@ -193,7 +210,7 @@ npm run test:backend
 npm run build && npm run test:sites
 ```
 
-42 engine, analyser, song and layout tests, 29 backend tests, 4 hosting tests. What was
+52 engine, analyser, song, layout and artwork tests, 29 backend tests, 4 hosting tests. What was
 checked in real browsers is recorded in [docs/qa.md](docs/qa.md).
 
 ## Publish
@@ -222,7 +239,8 @@ folder. `VITE_BACKEND=off` is what tells the game there is no server to look for
 | `src/game/rules.js` | Every number the rules use |
 | `src/game/renderer.js` | The play screen |
 | `src/game/layout.js` | Where everything sits, and how the stage fills a window |
-| `src/game/art/` | All drawing code: notes, mascot, dancers, HUD, effects, scenery |
+| `src/game/art/` | Everything drawn: painted sprites (`sprites.js`), effects, scenery, stand-ins |
+| `src/game/touchDrum.js`, `src/ui/TouchDrum.jsx` | The drum on touch screens: where it sits, what a touch plays |
 | `src/game/audio.js` | Song clock and synthesised drum sounds |
 | `src/game/songs/` | The built-in songs as scores, and the synthesiser that plays them |
 | `src/game/features.js` | The browser analyser: tempo, beat grid, attacks per band |
@@ -230,7 +248,8 @@ folder. `VITE_BACKEND=off` is what tells the game there is no server to look for
 | `src/library.js`, `src/songStore.js` | The song shelf, and songs saved in this browser |
 | `src/screens/`, `src/ui/` | Title, song select, play, results, dialogs |
 | `backend/src/taiko_backend/` | `analysis.py` listens, `charting.py` writes charts, `main.py` serves |
-| `public/art/` | Two painted background plates |
+| `public/art/` | Painted backgrounds, the drum, and the sprite atlases |
+| `tools/art/` | How the pictures were made: prompts, generated sheets, the cutter |
 | `src/dev/` | Development tools: sprite gallery and the cut-off text audit |
 | `docs/` | Art notes, genre references, QA record, screenshots |
 

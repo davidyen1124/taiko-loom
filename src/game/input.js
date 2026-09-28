@@ -19,7 +19,8 @@ export function padForKey(event) {
   return KEYS[event.key.toLowerCase()] || null;
 }
 
-// Touch: the screen is a drum. Outer fifths are the rim, the middle is the face.
+// A pointer with no drum on screen (a mouse, or the drum switched off): the
+// screen is the drum. Outer fifths are the rim, the middle is the face.
 export function padForPoint(x, width) {
   const ratio = x / width;
   if (ratio < 0.2) return PADS[0];

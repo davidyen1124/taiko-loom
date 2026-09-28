@@ -1,0 +1,125 @@
+{
+  "sources": "sheets",
+  "atlases": {
+    "yoru": {
+      "out": "public/art/sprites/yoru",
+      "size": 440,
+      "sheets": [
+        {
+          "file": "yoru-play.webp",
+          "grid": "3x2",
+          "unit": "idle",
+          "anchor": "feet",
+          "names": [
+            "idle",
+            "blink",
+            "don-left",
+            "don-right",
+            "ka-left",
+            "ka-right"
+          ]
+        },
+        {
+          "file": "yoru-feel.webp",
+          "grid": "3x2",
+          "unit": "-idle",
+          "anchor": "feet",
+          "names": [
+            "-idle",
+            "dance-a",
+            "dance-b",
+            "jump",
+            "oops",
+            "puff"
+          ]
+        },
+        {
+          "file": "yoru-results.webp",
+          "grid": "3x2",
+          "unit": "-idle",
+          "anchor": "feet",
+          "names": [
+            "-idle",
+            "cheer-a",
+            "cheer-b",
+            "sad-a",
+            "sad-b",
+            "wave"
+          ]
+        }
+      ]
+    },
+    "friends": {
+      "out": "public/art/sprites/friends",
+      "size": 300,
+      "sheets": [
+        {
+          "file": "friends-1.webp",
+          "grid": "3x2",
+          "unit": "slot",
+          "anchor": "feet",
+          "names": [
+            "daruma-a",
+            "fox-a",
+            "cat-a",
+            "daruma-b",
+            "fox-b",
+            "cat-b"
+          ]
+        },
+        {
+          "file": "friends-2.webp",
+          "grid": "2x2",
+          "unit": "slot",
+          "anchor": "feet",
+          "names": [
+            "lantern-a",
+            "mochi-a",
+            "lantern-b",
+            "mochi-b"
+          ]
+        }
+      ]
+    },
+    "hud": {
+      "out": "public/art/sprites/hud",
+      "size": 192,
+      "sheets": [
+        {
+          "file": "icons.webp",
+          "grid": "3x2",
+          "unit": "each",
+          "anchor": "centre",
+          "names": [
+            "blossom",
+            "leaf",
+            "flame",
+            "crown-silver",
+            "crown-gold",
+            "crown-rainbow"
+          ]
+        }
+      ]
+    },
+    "notes": {
+      "out": "public/art/sprites/notes",
+      "size": 256,
+      "sheets": [
+        {
+          "file": "notes.webp",
+          "grid": "3x2",
+          "unit": "each",
+          "anchor": "centre",
+          "names": [
+            "don",
+            "ka",
+            "roll",
+            "balloon",
+            "-spare",
+            "float"
+          ]
+        }
+      ]
+    }
+  }
+}

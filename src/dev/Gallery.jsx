@@ -1,5 +1,5 @@
 // Developer-only sprite sheets, opened with ?gallery or ?gallery=sheet.
-// Used for visual QA and as the character reference for generated artwork.
+// Used for visual QA. ?gallery=sheet is the model sheet kept in docs/art.
 import { useEffect, useRef } from 'react';
 import { loadFonts } from '../fonts.js';
 import { drawBalloon, drawNote, drawRoll, drawTarget } from '../game/art/notes.js';
@@ -7,28 +7,35 @@ import { drawMascot } from '../game/art/mascot.js';
 import { dancerSprite, DANCERS } from '../game/art/dancers.js';
 import { drawBadge } from '../game/art/hud.js';
 import { label, stamp } from '../game/art/draw.js';
+import { loadPlates } from '../game/art/plates.js';
+import { drawSprite, loadSprites } from '../game/art/sprites.js';
 
 const WIDTH = 1536;
 const HEIGHT = 1024;
 
-function sheet(c, scale) {
+const YORU = ['idle', 'blink', 'don-left', 'don-right', 'ka-left', 'ka-right', 'dance-a', 'dance-b', 'jump', 'oops', 'puff', 'cheer-a', 'cheer-b', 'sad-a', 'sad-b', 'wave'];
+const ink = { fill: '#1a1014', stroke: null, width: 0 };
+
+// The model sheet: every painted sprite, each with the name the game calls it by.
+function sheet(c) {
   c.fillStyle = '#fff6e0'; c.fillRect(0, 0, WIDTH, HEIGHT);
-  label(c, 'YORU  the festival tanuki', 60, 70, { size: 40, fill: '#1a1014', stroke: null, width: 0 });
-  const poses = [
-    ['idle', { mood: 'idle' }], ['strike', { mood: 'idle', right: 1 }], ['happy', { mood: 'happy', jump: 30 }],
-    ['sad', { mood: 'sad' }], ['go-go', { mood: 'gogo', left: 1 }],
-  ];
-  // each pose gets a 296-wide cell: the figure with sticks raised is 292 wide
-  poses.forEach(([name, pose], i) => {
-    drawMascot(c, 176 + i * 296, 540, 1, { time: 0.4, ...pose });
-    label(c, name, 176 + i * 296, 600, { size: 26, align: 'center', fill: '#1a1014', stroke: null, width: 0 });
+  label(c, 'YORU  the festival tanuki', 40, 52, { size: 34, ...ink });
+  YORU.forEach((id, i) => {
+    const x = 104 + (i % 8) * 190;
+    const y = 262 + Math.floor(i / 8) * 250;
+    drawSprite(c, 'yoru', id, x, y, 176);
+    label(c, id, x, y + 26, { size: 17, align: 'center', ...ink });
   });
-  label(c, 'Festival friends', 60, 720, { size: 32, fill: '#1a1014', stroke: null, width: 0 });
+  label(c, 'Festival friends', 40, 606, { size: 28, ...ink });
   DANCERS.forEach((dancer, i) => {
-    const entry = dancerSprite(dancer.id, scale * 1.6);
-    stamp(c, entry, 40 + i * 230, 740, entry.width * 1.4, entry.height * 1.4);
+    ['a', 'b'].forEach((pose, k) => drawSprite(c, 'friends', `${dancer.id}-${pose}`, 90 + i * 300 + k * 144, 800, 150));
+    label(c, dancer.id, 162 + i * 300, 826, { size: 17, align: 'center', ...ink });
   });
-  ['don', 'ka', 'bigDon', 'bigKa'].forEach((type, i) => drawNote(c, type, 1260 + (i % 2) * 140, 800 + Math.floor(i / 2) * 130, scale));
+  label(c, 'Notes, emblems and crowns', 40, 880, { size: 28, ...ink });
+  ['don', 'ka', 'roll', 'balloon'].forEach((id, i) => drawSprite(c, 'notes', id, 90 + i * 110, 950, 92));
+  drawSprite(c, 'notes', 'float', 540, 950, 70);
+  ['blossom', 'leaf', 'flame'].forEach((id, i) => drawSprite(c, 'hud', id, 680 + i * 110, 950, 92));
+  ['crown-silver', 'crown-gold', 'crown-rainbow'].forEach((id, i) => drawSprite(c, 'hud', id, 1040 + i * 130, 950, 110));
 }
 
 function sprites(c, scale, t) {
@@ -57,17 +64,17 @@ export function Gallery() {
   useEffect(() => {
     let frame;
     const canvas = ref.current;
-    const ratio = mode === 'sheet' ? 1 : window.devicePixelRatio || 1;
+    const ratio = mode === 'sheet' ? 2 : window.devicePixelRatio || 1;
     canvas.width = WIDTH * ratio; canvas.height = HEIGHT * ratio;
     const c = canvas.getContext('2d');
     const started = performance.now();
     const paint = now => {
       c.setTransform(ratio, 0, 0, ratio, 0, 0);
-      if (mode === 'sheet') sheet(c, ratio);
+      if (mode === 'sheet') sheet(c);
       else sprites(c, ratio, (now - started) / 1000);
       if (mode !== 'sheet') frame = requestAnimationFrame(paint);
     };
-    loadFonts('YORUthefestivaltanukiFestivalfriends').then(() => { paint(performance.now()); window.galleryReady = true; });
+    Promise.all([loadFonts('YORUthefestivaltanukiFestivalfriends'), loadSprites(), loadPlates()]).then(() => { paint(performance.now()); window.galleryReady = true; });
     return () => cancelAnimationFrame(frame);
   }, [mode]);
   return <canvas ref={ref} id="gallery" style={{ width: WIDTH, height: HEIGHT, display: 'block' }} />;

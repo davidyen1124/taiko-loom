@@ -88,7 +88,7 @@ export function SettingsDialog({ settings, onChange, onClose }) {
       <Slider id="set-offset" icon={Timer} label="Timing offset" hint="Raise it if good hits are judged late (Bluetooth, TVs)." value={settings.offset} display={`${settings.offset > 0 ? '+' : ''}${settings.offset} ms`} {...LIMITS.offset} onChange={value => set('offset', value)} />
       <Calibrate onResult={value => set('offset', value)} />
       <Toggle id="set-auto" icon={Bot} label="Auto play" hint="Yoru plays for you. Scores are not saved." value={settings.auto} onChange={value => set('auto', value)} />
-      <Toggle id="set-guide" icon={Hand} label="Touch guide" hint="Show the four drum zones on touch screens." value={settings.guide} onChange={value => set('guide', value)} />
+      <Toggle id="set-guide" icon={Hand} label="On-screen drum" hint="Show the drum on touch screens. Hidden, the screen still plays." value={settings.guide} onChange={value => set('guide', value)} />
       <footer className="dialog-foot">
         <button className="button ghost" onClick={() => onChange({ ...DEFAULT_SETTINGS })}><RotateCcw size={18} strokeWidth={3} />Reset</button>
         <button className="button primary" onClick={onClose}>Done</button>

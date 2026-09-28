@@ -11,14 +11,16 @@ export const useStageScale = () => useContext(StageContext).scale;
 
 const same = (a, b) => a.width === b.width && a.height === b.height && a.upright === b.upright && Math.abs(a.scale - b.scale) < 1e-4;
 
+const fingers = () => window.matchMedia('(pointer: coarse)').matches;
+
 export function Stage({ children }) {
   const frame = useRef();
-  const [stage, setSize] = useState(() => stageFor(window.innerWidth, window.innerHeight));
+  const [stage, setSize] = useState(() => stageFor(window.innerWidth, window.innerHeight, { touch: fingers() }));
   const [dismissed, setDismissed] = useState(false);
   useEffect(() => {
     const measure = () => {
       const box = frame.current.getBoundingClientRect();
-      const next = stageFor(box.width, box.height);
+      const next = stageFor(box.width, box.height, { touch: fingers() });
       setSize(current => (same(current, next) ? current : next));
     };
     measure();

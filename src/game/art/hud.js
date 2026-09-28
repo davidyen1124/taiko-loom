@@ -5,8 +5,14 @@ import {
 } from './draw.js';
 import { DRUM, GAUGE, PANEL, STAGE } from '../layout.js';
 import { COMBO_SHOWN_FROM, LEVELS } from '../rules.js';
+import { plate } from './plates.js';
+import { drawSprite } from './sprites.js';
+import { SKIN } from '../touchDrum.js';
 
-export function drawIcon(c, icon, x, y, r) {
+// A difficulty emblem. Painted, it is a whole badge of radius r with its own
+// coloured centre; drawn, it is only the symbol, for a badge the caller supplies.
+export function drawIcon(c, icon, x, y, r, { badge = false } = {}) {
+  if (drawSprite(c, 'hud', icon, x, y, r * (badge ? 2 : 2.5))) return;
   c.save();
   c.translate(x, y);
   if (icon === 'blossom') {
@@ -102,9 +108,18 @@ function panelBase(scale) {
 
 function drumBase(scale) {
   const size = DRUM.radius * 2 + 20;
-  return sprite('drum', size, size, scale, (c, w) => {
+  const painted = plate('drum');
+  return sprite(painted ? 'drum-painted' : 'drum', size, size, scale, (c, w) => {
     const m = w / 2;
     const r = DRUM.radius;
+    if (painted) {
+      c.globalAlpha = 0.3;
+      ellipse(c, m, m + 7, r + 2, r + 1, INK);
+      c.globalAlpha = 1;
+      c.imageSmoothingQuality = 'high';
+      c.drawImage(painted, m - r - 3, m - r - 3, (r + 3) * 2, (r + 3) * 2);
+      return;
+    }
     c.globalAlpha = 0.3;
     ellipse(c, m, m + 7, r + 2, r + 1, INK);
     c.globalAlpha = 1;
@@ -148,13 +163,15 @@ export function drawDrum(c, scale, flashes, punch = 0) {
     c.fillStyle = color; c.fill();
     c.restore();
   };
-  half('left', 0, r - 17, DON_LIGHT, flashes.leftDon);
-  half('right', 0, r - 17, DON_LIGHT, flashes.rightDon);
-  half('left', r - 12, r + 1, KA_LIGHT, flashes.leftKa);
-  half('right', r - 12, r + 1, KA_LIGHT, flashes.rightKa);
+  // the painted drum's skin is a set share of its width
+  const skin = plate('drum') ? (r + 3) * SKIN : r - 17;
+  half('left', 0, skin, DON_LIGHT, flashes.leftDon * (plate('drum') ? 0.85 : 1));
+  half('right', 0, skin, DON_LIGHT, flashes.rightDon * (plate('drum') ? 0.85 : 1));
+  half('left', skin + 5, r + 1, KA_LIGHT, flashes.leftKa * (plate('drum') ? 0.8 : 1));
+  half('right', skin + 5, r + 1, KA_LIGHT, flashes.rightKa * (plate('drum') ? 0.8 : 1));
   if (flashes.leftDon > 0 || flashes.rightDon > 0) {
     c.globalAlpha = clamp(Math.max(flashes.leftDon, flashes.rightDon));
-    ring(c, 0, 0, r - 17, DON, 3);
+    ring(c, 0, 0, skin, DON, 3);
   }
   c.restore();
 }

@@ -43,6 +43,10 @@ test('a phone held upright keeps the design grid and says so', () => {
   assert.deepEqual([stage.width, stage.height, stage.upright], [1280, 720, true]);
   assert.ok(Math.abs(stage.scale - 375 / 1280) < 1e-9);
   assert.equal(stageFor(844, 390).upright, false);
+  // a tablet is wider than a phone, but held upright it needs the room for its drum too
+  assert.equal(stageFor(820, 1180).upright, false, 'a tall desktop window keeps its stage');
+  assert.equal(stageFor(820, 1180, { touch: true }).upright, true);
+  assert.equal(stageFor(1180, 820, { touch: true }).upright, false);
 });
 
 test('what hangs off the right edge follows the stage', () => {

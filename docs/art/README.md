@@ -1,61 +1,107 @@
 # Artwork
 
-Everything in Taiko Nights is original. Notes, the mascot, the dancers, the HUD and
-all effects are drawn in code (`src/game/art/`). Two background plates are painted
-bitmaps in `public/art/`.
+Everything in Taiko Nights is original. The characters, notes, drum, emblems, crowns
+and backgrounds are painted pictures, made for this game with the Codex CLI. Effects
+that move with the music (fire, fireworks, the soul gauge, judgement words) are
+drawn in code.
+
+![Every painted sprite, as the game draws them](model-sheet.webp)
+
+The sheet above is drawn by the game itself (`/?gallery=sheet` in development), so
+it always shows what players see.
 
 ## Yoru, the mascot
 
-`yoru-model-sheet.png` is the reference for the character. It is rendered by the
-game itself (`/?gallery=sheet` in development), so the sheet and the in-game sprite
-can never drift apart. Any new artwork that shows Yoru must match it:
+Yoru is a festival tanuki cub who drums on a drum strapped to its belly. Any new
+picture of Yoru must match `tools/art/sheets/yoru-canonical.webp`:
 
-- round brown tanuki with dark brown eye patches, cream muzzle, pink cheeks
-- one green leaf on the head
-- twisted red and white headband, white bow on the character's left with a red centre
+- big round head, about half the total height; round body; short limbs; small oval feet
+- chestnut fur, darker eye-mask patches, large dark eyes, cream muzzle and inner ears,
+  small black nose, rosy cheeks, round ears
+- exactly one green leaf on the head
+- twisted red and white rope headband, white bow with a red knot on the viewer's right
 - open indigo happi coat with one white four-point star on each side
-- cream belly drum skin with a red swirl crest
-- two plain wooden drumsticks, brown tail with a darker tip
-- big head, short limbs, no other clothing or accessories
+- cream belly drum with a red three-armed swirl crest
+- exactly two plain wooden drumsticks
+- fluffy brown tail with a darker tip, at the viewer's right
+- no other clothing or props
 
-## Painted plates
+Yoru is not symmetrical (bow and tail are on one side), so a pose is never mirrored
+to make its opposite. Left-hand and right-hand hits are separate paintings.
 
-The prompts below are recorded with the mascot's current name, Yoru (夜, night).
+## How the pictures are made
 
-Both were generated with the Codex `imagegen` skill, with the model sheet attached as
-the style and character reference, then checked by eye against the list above.
+The method is the one Codex's `hatch-pet` skill uses for animated pets, adapted to a
+game, with its `imagegen` skill doing the painting:
 
-| File | Used for | Source size |
-| --- | --- | --- |
-| `public/art/festival.webp` | lower half of the play screen and results | 2172 x 724 |
-| `public/art/title.webp` | title screen | 1672 x 941 |
+1. **One canonical picture first.** `yoru-canonical` was generated from a written
+   description. Every later picture of Yoru is generated with it attached, as the
+   only authority on what Yoru looks like.
+2. **Poses are generated together, on sheets.** A sheet holds six poses on a 3 by 2
+   grid. A layout guide (slots, safe area, ground line) is attached so the poses are
+   spaced evenly. Generating poses side by side is what keeps the character the same
+   size and style from pose to pose. Each sheet of Yoru opens with the canonical pose
+   again, which is how the sheets are matched to one another.
+3. **Generated pixels are never redrawn.** `tools/art/cut.py` separates each pose from
+   the transparent background, measures it, finds its anchor (the point between the
+   feet) and packs the poses into one atlas per subject.
+4. **Every result is checked by eye** on a contact sheet (`tools/art/contact.py`)
+   with all poses on a common anchor, then in the game.
 
-Stall sign lettering and lantern glow are added in code on top of the festival plate
-(`src/game/art/scenery.js`), so the plate itself carries no text. If a plate fails to
-load, the code-drawn festival in the same file is used instead.
-
-### Prompt: festival plate
-
-```text
-Use case: stylized-concept. Create festival-backdrop.png, a 3:1 landscape bitmap for the original game Taiko Nights.
-Input image: the Yoru model sheet is a STYLE REFERENCE ONLY. Match its thick uniform #1a1014 outlines, rounded shapes and perfectly flat solid-color cartoon fills. Do not reproduce its characters or lettering.
-Draw an EMPTY Japanese summer-night festival as a straight-on, flat stage set. Upper 25%: solid indigo night sky, sparse stars, full moon at upper right, dark distant hills and pine silhouettes. Middle 50%: exactly FOUR simple food stalls with striped awnings, two on either side of a wooden yagura at the exact horizontal centre. Each stall has a completely blank colored signboard and a few simple food shapes. The yagura has red-and-white curtains and a large taiko drum on its upper platform. Cream and gold paper lanterns hang in strings from the tower toward both upper corners.
-Lower 25%: completely empty warm orange plaza, one solid flat #e0843e fill with only a few simple paving seams. Nothing stands in this quarter. Keep all standalone objects entirely inside the frame horizontally, with small side margins.
-Palette: vermilion #f2452b, cyan #4fc0d8, gold #ffd34f, cream #fff6e0, indigo #130d33, plum #35205f, orange #e0843e, brown #b36f3c.
-Targeted style correction: make this as simple and graphic as the reference sheet. Use thick dark outlines and flat color regions throughout; at most one hard-edged shade and one hard-edged highlight per object. No gradients, glows, grain, textures, brushwork, realistic lighting or 3D. Convey warm lantern light using solid cream fills. Cheerful, rounded and friendly.
-Absolutely NO people, animals, characters, mascots, faces or anthropomorphic objects. NO text, letters, numbers, kana, kanji, logos or watermark anywhere. All signboards must be blank. No existing game, anime or brand imagery. Output only the finished backdrop.
-
+```bash
+tools/art/generate.sh yoru-play tools/art/sheets/yoru-canonical.webp guide-3x2.png
 ```
 
-### Prompt: title plate
-
-```text
-Use case: illustration-story. Generate title-art.png, a single 16:9 landscape title-screen illustration for the original game Taiko Nights.
-Input image: Yoru's original character model sheet, the ONLY authoritative character and style reference. Reproduce the HAPPY pose in the middle of its top row extremely faithfully: same face, mouth, big head, squat torso, short capsule arms, tiny oval feet, coat and tail. Do not reproduce the sheet's words or other characters.
-Scene: Yoru joyfully plays a large separate taiko drum on a wooden stand, mid-swing, at a summer night festival. Yoru and the drum occupy the lower-right two thirds; the drum stands immediately to Yoru's viewer-left. One short arm holds a stick near the drumhead, the other short arm holds its stick raised. Full Yoru, sticks, tail, drum and stand in frame. Upper-left third is calm open indigo sky reserved for a future logo. Lantern strings across the top. Three simple fireworks at upper middle/right. Simple distant blank festival stalls and orange ground.
-Critical corrections: keep the arms as SHORT as in the reference HAPPY pose, approximately one quarter of the head width from shoulder to paw. Match the happy mouth exactly: dark burgundy open smile, pink ring along its bottom, with a small CREAM OVAL INSIDE that pink ring. The cream oval at the bottom of the mouth must be clearly visible. Do not substitute a conventional pink tongue. Follow the reference's facial proportions and clean flat rendering.
-All mandatory invariants: round brown tanuki, dark brown eye-mask patches, cream muzzle, small black nose, open smiling mouth, pink cheeks, ONE green leaf atop the head; twisted red-and-white striped headband with WHITE bow on character's LEFT (viewer's RIGHT) and RED round knot centre; open-front indigo happi coat with ONE white FOUR-POINT star on EACH side; cream belly drum skin with the reference's RED SWIRL crest; exactly TWO plain wooden drumsticks, one per paw; brown tail with darker tip; big head, short limbs. No extra clothing or accessories. Keep both stars, belly crest and tail clearly visible.
-House style: exactly the model sheet's flat vector cartoon, very thick uniform dark #1a1014 outlines, rounded shapes, flat fills with at most one simple hard-edged shade and one highlight. No painted shading, gradients, texture, airbrush glow or 3D. Palette: vermilion #f2452b, cyan #4fc0d8, gold #ffd34f, cream #fff6e0, indigo #130d33, plum #35205f, orange #e0843e, fur brown #b36f3c. Cheerful warm lantern colors and cool night sky.
-NO text, letters, numbers, kana, kanji, logos or watermark. No other people, animals, characters or faces. No existing game, anime or brand imagery.
-
+```bash
+uv run --with pillow --with numpy --with scipy python tools/art/cut.py tools/art/atlases.json
 ```
+
+```bash
+uv run --with pillow python tools/art/contact.py public/art/sprites/yoru.json contact.png
+```
+
+The first command needs the Codex CLI with its `imagegen` and `hatch-pet` skills. It
+works in a scratch folder and overwrites nothing. Look at the result, and if it is
+right, save it into `tools/art/sheets` as WebP at quality 95 with full-quality transparency.
+
+Two things learned the hard way:
+
+- **Measure transparency, do not look for it.** Generated sheets have a real alpha
+  channel but keep leftover colour underneath the transparent pixels. Some viewers
+  show that colour, and the sheet looks as if it had a murky background. It does not.
+- **A picture that holds its subject in one half is easier to lay out.** The first
+  title picture had its drum under the logo. The prompt now says which half of the
+  picture must stay empty.
+
+## What is where
+
+| In the game | Atlas or picture | Generated as | Prompt |
+| --- | --- | --- | --- |
+| Yoru: idle, blink, don and ka with either hand | `sprites/yoru` | `yoru-play` | `prompts/yoru-play.md` |
+| Yoru: dance, jump, oops, puff | `sprites/yoru` | `yoru-feel` | `prompts/yoru-feel.md` |
+| Yoru: cheer, sad, wave | `sprites/yoru` | `yoru-results` | `prompts/yoru-results.md` |
+| Daruma, fox, lucky cat: two dance poses each | `sprites/friends` | `friends-1` | `prompts/friends-1.md` |
+| Lantern, rice dumplings: two dance poses each | `sprites/friends` | `friends-2` | `prompts/friends-2.md` |
+| Don, ka, drumroll and balloon notes; the balloon | `sprites/notes` | `notes` | `prompts/notes.md` |
+| Difficulty emblems and crowns | `sprites/hud` | `icons` | `prompts/icons.md` |
+| The drum: in the panel, and under your fingers on a touch screen | `drum.webp` | `drum` | `prompts/drum.md` |
+| Title screen | `title.webp` | `title-art` | `prompts/title-art.md` |
+| Festival behind the dancers, and on the results screen | `festival.webp` | `festival-backdrop` | `prompts/festival.md` |
+| Behind the menus | `menu.webp` | `menu-backdrop` | `prompts/menu.md` |
+
+Atlases and pictures are in `public/art`; sheets and prompts are in `tools/art`.
+
+## Rules
+
+- **Original work only.** No character, sprite, logo, sound or chart from any
+  existing game, and nothing drawn to resemble one. Notes have a crest, never a face.
+- **No writing in a picture.** Stall signs, score stamps and every other word are
+  set in code, so they stay sharp and can be translated.
+- **The drum is painted from straight above.** The touch drum tilts it by drawing it
+  wider than tall, which keeps the hit areas exact: the skin is 69% of the drum's
+  width, measured on the painting (`SKIN` in `src/game/touchDrum.js`).
+- **The festival keeps its layout.** Sign boards, lanterns, moon and plaza are
+  measured on the picture (`src/game/art/scenery.js`). A new festival picture must
+  be a repaint of the old one, or those measurements must be taken again.
+- **Everything has a stand-in.** If a picture fails to load, the figure drawn in
+  code is used. The game never waits on a picture.

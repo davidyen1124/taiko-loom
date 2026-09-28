@@ -8,7 +8,7 @@ server and a local backend. Viewports: 1280 x 720, 844 x 390 (phone, sideways) a
 
 | Suite | Command | Result |
 | --- | --- | --- |
-| Rules engine, browser analyser, built-in songs and stage layout | `npm test` | 42 passed |
+| Rules engine, browser analyser, built-in songs, stage layout and artwork | `npm test` | 52 passed |
 | Backend analysis, charting and API | `npm run test:backend` | 29 passed |
 | Hosting worker and build output | `npm run build && npm run test:sites` | 4 passed |
 
@@ -76,6 +76,34 @@ it was published: 70 of 70.
 | Window shapes | Audit at 1280 x 720, 1024 x 768, 1366 x 1024, 1920 x 1080, 2560 x 1080 and 844 x 390: 74 screens | Pass |
 | Phone upright | 390 x 844 shows the rotate hint | Pass |
 
+## Painted artwork and the touch drum
+
+Tested on 2026-09-27 with Playwright driving headless Chromium and WebKit, against
+the development build and the static build served under `/taiko-nights/`.
+
+| Area | What was done | Result |
+| --- | --- | --- |
+| Characters | 16 poses of Yoru and 10 of the festival friends laid out on one anchor and compared by eye | Pass |
+| Characters | Same size from pose to pose: standing poses within 8% of one another, measured | Pass, automated |
+| Characters | Yoru shows the hand and the part of the drum that was played | Pass, automated |
+| Notes | Roundness of the painted notes: edge within 1.5 px of a circle of radius 127 | Pass |
+| Notes | Drumroll band matches its note; balloon trails its note | Pass |
+| Stand-ins | Every picture blocked: the game starts and plays with the figures drawn in code | Pass |
+| Festival | Sign lettering and lantern glow still sit on the repainted picture | Pass |
+| Title | Yoru whole at 16:9, 4:3, 21:9 and on a phone; logo and start button over open sky | Pass after fix 23 |
+| Menus | Painted lane behind song select; banners and text stay readable | Pass |
+| Touch drum | Hidden with mouse and keyboard at 1280 x 720 and 1920 x 1080 | Pass |
+| Touch drum | Shown on phones and tablets, sideways and upright, in both browsers | Pass |
+| Touch drum | Real touches: skin left and right, rim left and right, beside the drum, above the drum | Pass, 6 of 6 each |
+| Touch drum | Two fingers together play both hands | Pass |
+| Touch drum | Pause button is not a drum hit; the drum steps aside while paused | Pass |
+| Touch drum | Sideways it never covers the lane; upright it never runs off the screen | Pass after fix 24, automated |
+| Touch drum | Festival friends line up behind the drum instead of under it | Pass |
+| Cut-off text | Audit on title, shelf, each song, help, settings and add dialogs at seven window shapes: 98 screens | Pass |
+| Whole site | The 35 end-to-end checks of the static build, in both browsers | Pass, 70 of 70 |
+| Drawing cost | WebKit, busiest part of the hardest song at 2560 x 1440: 3.2 ms a frame | Pass |
+| Drawing cost | Chromium without a graphics card: the same with every picture blocked as with them | No change |
+
 ## Bugs found and fixed during QA
 
 1. **Stale menu state.** Two keys pressed quickly let the second act on the screen as
@@ -137,6 +165,15 @@ Causes and fixes:
 22. **Loud peaks clipped at full volume** (up to 8% over full scale). Every song is now
     levelled under a limiter.
 
+23. **Title picture had its drum under the logo and the start button.** Painted again
+    with everything in its right half; on wide windows the band that is shown is the
+    one that holds all of Yoru.
+24. **On an upright tablet the touch drum ran off the bottom of the screen,** and the
+    stage sat in the middle of the display with empty space above it. The drum is now
+    sized to the space it has, and a tablet held upright gets the stage at the top.
+25. **Generated sheets looked as if they had a murky background.** They did not: the
+    colour sits under fully transparent pixels. Transparency is now measured.
+
 The audit measures each text's letters, grows that box by half the outline width, and
 tests it against every ancestor that clips. It switches animations off while it
 measures, so a panel that is still sliding open is judged by where it ends up.
@@ -147,7 +184,13 @@ measures, so a panel that is still sliding open is judged by where it ends up.
   view. Animation was therefore judged from stepped frames (below) rather than by
   watching it in motion. Smoothness on a real display was not measured.
 - WebKit was tested through Playwright, not Safari itself. Firefox and physical
-  phones were not tested.
+  phones were not tested. The touch drum was played with emulated touches, which
+  say nothing about how it feels under real thumbs or how late a phone's screen and
+  speaker are. Use the timing offset in Settings.
+- Drawing smoothness was measured without a graphics card. On a real display it was
+  not measured.
+- The pictures were judged by one pair of eyes. Whether Yoru is appealing is for
+  players to say.
 - Sound was verified by measurement, not by ear: level, tuning of every pitched
   instrument, timing against the chart, and a spectrogram of each song. Whether the
   three songs are pleasant to listen to needs a person.
