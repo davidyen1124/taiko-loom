@@ -12,6 +12,11 @@ beat and writes Easy, Medium and Hard charts, and you play it with four keys.
 Everything here is original: the code, the mascot (Loomi the tanuki), the festival
 friends, the notes and the built-in song. See [docs/art](docs/art/README.md).
 
+The game fills the window at any shape, with no bars. A wider window makes the lane
+longer; a taller one adds sky above and a festival curtain below.
+
+![The same song in a 4:3 window](docs/screens/play-4x3.webp)
+
 ## Run it
 
 You need Node 20+, [uv](https://github.com/astral-sh/uv) and FFmpeg on your PATH.
@@ -148,7 +153,7 @@ npm run test:backend
 npm run build && npm run test:sites
 ```
 
-22 engine and analyser tests, 29 backend tests, 4 hosting tests. What was checked by
+29 engine, analyser and layout tests, 29 backend tests, 4 hosting tests. What was checked by
 hand in the browser is recorded in [docs/qa.md](docs/qa.md).
 
 ## Layout
@@ -158,6 +163,7 @@ hand in the browser is recorded in [docs/qa.md](docs/qa.md).
 | `src/game/engine.js` | Rules: judging, scoring, gauge, drumrolls, balloons, auto play |
 | `src/game/rules.js` | Every number the rules use |
 | `src/game/renderer.js` | The play screen |
+| `src/game/layout.js` | Where everything sits, and how the stage fills a window |
 | `src/game/art/` | All drawing code: notes, mascot, dancers, HUD, effects, scenery |
 | `src/game/audio.js` | Song clock and synthesised drum sounds |
 | `src/game/demoSong.js` | The built-in song and its charts, as data |
@@ -165,6 +171,7 @@ hand in the browser is recorded in [docs/qa.md](docs/qa.md).
 | `src/screens/`, `src/ui/` | Title, song select, play, results, dialogs |
 | `backend/src/taiko_backend/` | `analysis.py` listens, `charting.py` writes charts, `main.py` serves |
 | `public/art/` | Two painted background plates |
+| `src/dev/` | Development tools: sprite gallery and the cut-off text audit |
 | `docs/` | Art notes, genre references, QA record, screenshots |
 
 `worker/`, `.openai/` and `scripts/prepare-sites-build.mjs` package the static build

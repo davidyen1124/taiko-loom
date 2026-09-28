@@ -1,13 +1,13 @@
 // Draws the play screen. Reads the game state, turns engine events into
 // animation, and paints one frame per call. Holds no rules of its own.
-import { INK, box, clamp, clearSprites, easeOut, label, lerp, line, vertical } from './art/draw.js';
+import { INK, box, clamp, clearSprites, easeOut, fitText, label, lerp, line, vertical } from './art/draw.js';
 import { Effects, drawCounter, drawFlames, drawTargetFire } from './art/effects.js';
 import { drawDancers, DANCERS } from './art/dancers.js';
 import { drawGauge, drawPanel } from './art/hud.js';
 import { drawMascot } from './art/mascot.js';
 import { drawBalloon, drawNote, drawRoll, drawTarget } from './art/notes.js';
-import { drawScene, drawTopBand } from './art/scenery.js';
-import { BEAT_WIDTH, FRAME, GAUGE, GROUND_Y, LANE, MASCOT, SCENE_Y, STAGE, TARGET, TITLE } from './layout.js';
+import { drawFooter, drawScene, drawTopBand } from './art/scenery.js';
+import { BEAT_WIDTH, FRAME, GAUGE, LANE, MASCOT, SAFE, SCENE_Y, STAGE, TARGET, TITLE, TOP_HEIGHT } from './layout.js';
 import { GAUGE as GAUGE_RULES, LEVELS, isHit, isRoll } from './rules.js';
 
 const FLASH = 0.13;
@@ -55,6 +55,7 @@ export class Renderer {
     this.resize();
   }
 
+  // The canvas covers the whole stage, whatever shape the window gave it.
   resize() {
     const rect = this.canvas.getBoundingClientRect();
     const ratio = Math.min(window.devicePixelRatio || 1, 3);
@@ -66,6 +67,11 @@ export class Renderer {
       clearSprites();
     }
     this.scale = width / STAGE.width;
+  }
+
+  // Spreads a row of positions laid out on the design grid across the stage.
+  across(x) {
+    return (x / SAFE.width) * STAGE.width;
   }
 
   start(game, song, { speed = 1 } = {}) {
@@ -136,11 +142,12 @@ export class Renderer {
           effects.shatter(now, event.combo);
           break;
         case 'milestone':
-          effects.callout(now, String(event.combo), 'コンボ!');
+          if (!this.counter || now >= this.counter.until) effects.callout(now, String(event.combo), 'コンボ!');
           this.setMood('happy', now, 1.1);
           this.jumpAt = now;
           break;
         case 'roll':
+          effects.dismiss('callout');      // the counter takes the mascot's speech bubble
           this.counter = { kind: 'roll', value: event.count, shownAt: this.counter?.kind === 'roll' ? this.counter.shownAt : now, until: now + 1.1 };
           effects.fly(now, event.kind === 'ka' ? (event.note.type === 'bigRoll' ? 'bigKa' : 'ka') : (event.note.type === 'bigRoll' ? 'bigDon' : 'don'));
           this.target = { at: now, kind: event.kind };
@@ -148,6 +155,7 @@ export class Renderer {
           break;
         case 'holdStart':
           if (event.note.type === 'balloon') {
+            effects.dismiss('callout');
             this.counter = { kind: 'balloon', value: event.note.hits, shownAt: now, until: Infinity, note: event.note };
           }
           break;
@@ -174,7 +182,7 @@ export class Renderer {
           if (event.on) {
             effects.banner(now, 'GO-GO TIME!', '#f2452b');
             [120, 300, 520, 760, 980, 1160].forEach((x, i) => {
-              effects.firework(now + i * 0.09, x, 70 + ((i * 53) % 90), (i * 67) % 360, 0.9 + (i % 3) * 0.2);
+              effects.firework(now + i * 0.09, this.across(x), 70 + ((i * 53) % 90), (i * 67) % 360, 0.9 + (i % 3) * 0.2);
             });
           }
           break;
@@ -184,13 +192,13 @@ export class Renderer {
         case 'finish':
           if (event.result.bad === 0 && event.result.total > 0) {
             effects.banner(now, event.result.ok === 0 ? 'パーフェクト!' : 'フルコンボ!', '#f4a81e');
-            [200, 440, 640, 840, 1080].forEach((x, i) => effects.firework(now + i * 0.08, x, 60 + ((i * 47) % 80), (i * 71) % 360, 1.1));
+            [200, 440, 640, 840, 1080].forEach((x, i) => effects.firework(now + i * 0.08, this.across(x), 60 + ((i * 47) % 80), (i * 71) % 360, 1.1));
             this.setMood('happy', now, 2);
             this.jumpAt = now;
           }
           break;
         case 'full':
-          [300, 640, 980].forEach((x, i) => effects.firework(now + i * 0.12, x, 80 + i * 20, 40 + i * 20, 1.2));
+          [300, 640, 980].forEach((x, i) => effects.firework(now + i * 0.12, this.across(x), 80 + i * 20, 40 + i * 20, 1.2));
           break;
         default:
       }
@@ -230,23 +238,37 @@ export class Renderer {
       if (!here && stats.gauge < dancer.joins - 4) delete this.entered[dancer.id];
     }
 
+    // Rows added above the design grid push the HUD, lane and scene down.
+    const { width, height, top, foot } = STAGE;
+    const sceneTop = SCENE_Y + top;
+    const sceneHeight = height - foot - sceneTop;
+
     // ---- bottom: the festival ------------------------------------------
     c.save();
-    c.translate(0, SCENE_Y);
-    c.beginPath(); c.rect(0, 0, STAGE.width, STAGE.height - SCENE_Y); c.clip();
-    drawScene(c, scale, now, { gogo: this.gogo, cleared: this.cleared });
+    c.translate(0, sceneTop);
+    c.beginPath(); c.rect(0, 0, width, sceneHeight); c.clip();
+    drawScene(c, scale, now, { gogo: this.gogo, cleared: this.cleared, width, height: sceneHeight });
     effects.drawScene(c, now);
     c.restore();
-    drawDancers(c, scale, GROUND_Y, { time: now, beat: phase, step, entered: this.entered, gogo });
+    c.save();
+    c.translate(0, height - foot);
+    drawFooter(c, width, foot);
+    c.restore();
+    drawDancers(c, scale, height - foot - 22, {
+      time: now, beat: phase, step, entered: this.entered, gogo,
+      centre: width / 2, spread: Math.min(1.3, width / SAFE.width),
+    });
 
     // ---- top band --------------------------------------------------------
     const mood = this.gogo > 0 ? 'gogo' : 'clear';
-    drawTopBand(c, scale, now, mood, Math.max(this.gogo, this.cleared));
+    drawTopBand(c, scale, now, mood, Math.max(this.gogo, this.cleared), width, TOP_HEIGHT + top);
+    c.save();
+    c.translate(0, top);
     drawGauge(c, { value: stats.gauge, clear: rule.clear, time: now, pulse: 1 - (now - this.gaugeAt) / 0.25 });
 
     // ---- frame, panel, lane ---------------------------------------------
     c.fillStyle = '#0d090c';
-    c.fillRect(0, FRAME.y, STAGE.width, FRAME.height);
+    c.fillRect(0, FRAME.y, width, FRAME.height);
     const swing = at => clamp(1 - (now - at) / 0.16);
     drawPanel(c, scale, {
       difficulty: game.difficulty,
@@ -268,7 +290,7 @@ export class Renderer {
     const name = now < this.mood.until ? this.mood.name
       : this.counter?.kind === 'balloon' ? 'balloon'
         : gogo ? 'gogo' : 'idle';
-    const jump = Math.sin(clamp((now - this.jumpAt) / 0.5) * Math.PI) * 46;
+    const jump = Math.sin(clamp((now - this.jumpAt) / 0.5) * Math.PI) * MASCOT.jump;
     drawMascot(c, MASCOT.x, MASCOT.y, MASCOT.size, {
       bob: Math.max(0, 1 - phase * 2.6),
       left: swing(this.arms.left),
@@ -285,25 +307,27 @@ export class Renderer {
       this.counter = null;
     }
     effects.drawOverlay(c, now);
+    c.restore();
     if (game.auto) {
-      box(c, 560, 8, 160, 30, 15, INK);
-      label(c, 'オート  AUTO', 640, 24, { size: 15, align: 'center', baseline: 'middle', fill: '#ffe36a', stroke: null, width: 0, weight: 900, spacing: 1.5 });
+      box(c, width / 2 - 80, 8, 160, 30, 15, INK);
+      label(c, 'オート  AUTO', width / 2, 24, { size: 15, align: 'center', baseline: 'middle', fill: '#ffe36a', stroke: null, width: 0, weight: 900, spacing: 1.5 });
     }
   }
 
   drawTitle(c) {
     const { song, game } = this;
     const level = LEVELS[game.difficulty];
-    label(c, song.title || 'Untitled', TITLE.x, TITLE.y, {
-      size: 36, align: 'right', baseline: 'middle', fill: '#fff', stroke: INK, width: 9, weight: 900, maxWidth: TITLE.maxWidth, shadow: 2,
+    // long names step down in size, then end in an ellipsis; never squeezed
+    label(c, song.title || 'Untitled', TITLE.x - 5, TITLE.y, {
+      size: 36, minSize: 24, align: 'right', baseline: 'middle', fill: '#fff', stroke: INK, width: 9, weight: 900, maxWidth: TITLE.maxWidth, shadow: 2,
     });
-    const text = song.artist || '';
-    if (text) {
-      c.font = `800 15px "M PLUS Rounded 1c", sans-serif`;
-      const width = Math.min(360, Math.max(120, c.measureText(text).width + 34));
+    if (song.artist) {
+      const artist = fitText(c, song.artist, 420, { size: 15, minSize: 13, weight: 800 });
+      c.font = `800 ${artist.size}px "M PLUS Rounded 1c", sans-serif`;
+      const width = Math.max(120, c.measureText(artist.text).width + 34);
       box(c, TITLE.x - width, TITLE.y + 28, width, 25, 12.5, level.color, INK, 3);
-      label(c, text, TITLE.x - width / 2, TITLE.y + 41, {
-        size: 15, align: 'center', baseline: 'middle', fill: '#fff', stroke: null, width: 0, weight: 800, maxWidth: width - 24,
+      label(c, artist.text, TITLE.x - width / 2, TITLE.y + 41, {
+        size: artist.size, align: 'center', baseline: 'middle', fill: '#fff', stroke: null, width: 0, weight: 800,
       });
     }
   }
@@ -330,7 +354,7 @@ export class Renderer {
     if (wash > 0) {
       const tint = this.lane.kind === 'ka' ? '70,170,255' : '255,70,40';
       const gradient = c.createLinearGradient(LANE.x, 0, LANE.x + LANE.width, 0);
-      gradient.addColorStop(0, `rgba(${tint},${0.34 * wash})`);
+      gradient.addColorStop(0, `rgba(${tint},${0.22 * wash})`);
       gradient.addColorStop(1, `rgba(${tint},0)`);
       c.save();
       c.globalCompositeOperation = 'lighter';
@@ -338,7 +362,7 @@ export class Renderer {
       c.fillRect(LANE.x, LANE.y, LANE.width, LANE.height);
       if (this.lane.hit) {
         const gold = c.createLinearGradient(LANE.x, 0, LANE.x + LANE.width * 0.7, 0);
-        gold.addColorStop(0, `rgba(255,225,60,${0.3 * wash})`);
+        gold.addColorStop(0, `rgba(255,225,60,${0.18 * wash})`);
         gold.addColorStop(1, 'rgba(255,225,60,0)');
         c.fillStyle = gold;
         c.fillRect(LANE.x, LANE.y, LANE.width, LANE.height);
@@ -393,7 +417,7 @@ export class Renderer {
 
     // notes that were hit leave the lane, so their flight is drawn unclipped
     c.save();
-    c.beginPath(); c.rect(0, 0, STAGE.width, LANE.y + LANE.height); c.clip();
+    c.beginPath(); c.rect(0, -STAGE.top, STAGE.width, STAGE.top + LANE.y + LANE.height); c.clip();
     for (const item of this.effects.items) {
       if (item.type !== 'fly') continue;
       const t = clamp((now - item.at) / item.life);

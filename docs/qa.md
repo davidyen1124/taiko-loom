@@ -8,7 +8,7 @@ server and a local backend. Viewports: 1280 x 720, 844 x 390 (phone, sideways) a
 
 | Suite | Command | Result |
 | --- | --- | --- |
-| Rules engine and on-device analyser | `npm test` | 22 passed |
+| Rules engine, on-device analyser and stage layout | `npm test` | 29 passed |
 | Backend analysis, charting and API | `npm run test:backend` | 29 passed |
 | Hosting worker and build output | `npm run build && npm run test:sites` | 4 passed |
 
@@ -69,6 +69,41 @@ server and a local backend. Viewports: 1280 x 720, 844 x 390 (phone, sideways) a
 8. **Layout collisions.** Score plate under the drum, lantern strings over stall
    signs, garland over the title, notes flying over the title, dancers behind the
    results buttons, a dancer's shadow appearing before the dancer.
+
+## Second pass: full window and cut-off text
+
+Reported by the owner after the first release: black bars beside the stage, a song
+title with its outline cut on the left, a smeared "Esc" key cap, the top of
+"曲をついか" cut, and the daruma's fan cut.
+
+| Check | Shapes | Result |
+| --- | --- | --- |
+| Stage fills the window, 0 px left over on every side | 1862x1017, 1440x900, 1024x768, 2560x1080, 1280x720, 844x390 | Pass |
+| Text audit (`__auditText()`): title, shelf, open song panel, remove confirm, settings, help, add banner, upload | 1862x1017 and 1024x768 | 252 elements, 0 cut off |
+| Text audit: pause, results cleared, results failed | 1862x1017 | 93 elements, 0 cut off |
+| Canvas text stress: 90-character title, 70-character artist, score 1,234,560, combo 1234 | 1862x1017 | Pass |
+| Every dancer, the mascot and the mascot at the top of a jump are whole | all of the above | Pass |
+| Festival stalls and their signs are whole | all of the above | Pass |
+
+Causes and fixes:
+
+9. **Black bars.** The stage was a fixed 16:9 frame. It now takes the window's shape.
+10. **Outlines cut by `overflow: hidden`.** Text is shortened with an ellipsis by
+    clipping its box, and the outline paints outside that box. Every outlined, clipped
+    text now has padding for its outline.
+11. **Smeared key caps.** Key caps inherited a dark text shadow meant for labels.
+12. **Dancers cut.** Their sprite canvases had no room for fans, tails and paws.
+13. **Go-Go banner over the song title.** Banners now cross the festival sky.
+14. **Long titles squeezed.** They now shrink, then shorten, and are never distorted.
+15. **Four-digit combo wider than the drum.** Sized to fit.
+16. **Festival picture zoomed on tall windows,** cropping the outer stalls and a sign.
+    It is now never zoomed past its width; spare rows become a curtain band.
+17. **Moon sliced by the frame edge** at some widths. It is shown whole or not at all.
+18. **Lane whited out on a hit during Go-Go Time.** The flash is softer.
+
+The audit measures each text's letters, grows that box by half the outline width, and
+tests it against every ancestor that clips. It switches animations off while it
+measures, so a panel that is still sliding open is judged by where it ends up.
 
 ## Known limits
 

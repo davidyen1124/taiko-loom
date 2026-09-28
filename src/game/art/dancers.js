@@ -4,6 +4,8 @@
 import { CREAM, DON, INK, TAU, clamp, disc, easeBack, ellipse, line, path, sprite, stamp } from './draw.js';
 
 const SIZE = { width: 130, height: 150 };
+// Room around each figure for what sticks out of it: fans, tails, raised paws.
+const PAD = { side: 48, top: 18, bottom: 10 };
 
 function face(c, x, y, { gap = 15, eye = 5, smile = 9, blush = true } = {}) {
   disc(c, x - gap, y, eye, INK); disc(c, x + gap, y, eye, INK);
@@ -137,28 +139,37 @@ function box2(c, x, y, w, h, fill) {
   c.fillStyle = fill; c.fill(); c.strokeStyle = INK; c.lineWidth = 4; c.lineJoin = 'round'; c.stroke();
 }
 
+// `from` is the distance from the middle of the stage.
 export const DANCERS = [
-  { id: 'daruma', x: 640, joins: 0 },
-  { id: 'fox', x: 430, joins: 20 },
-  { id: 'cat', x: 850, joins: 40 },
-  { id: 'lantern', x: 230, joins: 60 },
-  { id: 'mochi', x: 1050, joins: 80 },
+  { id: 'daruma', from: 0, joins: 0 },
+  { id: 'fox', from: -210, joins: 20 },
+  { id: 'cat', from: 210, joins: 40 },
+  { id: 'lantern', from: -410, joins: 60 },
+  { id: 'mochi', from: 410, joins: 80 },
 ];
 
 export function dancerSprite(id, scale) {
-  return sprite(`dancer-${id}`, SIZE.width, SIZE.height, scale, c => PAINTERS[id](c));
+  const width = SIZE.width + PAD.side * 2;
+  const height = SIZE.height + PAD.top + PAD.bottom;
+  return sprite(`dancer-${id}`, width, height, scale, c => {
+    c.translate(PAD.side, PAD.top);
+    PAINTERS[id](c);
+  });
 }
 
 /**
- * state.entered[id] is the song time each dancer hopped in, or undefined.
+ * entered[id] is the moment each dancer hopped in, or undefined.
  * beat is a 0..1 phase inside the current beat, step counts beats.
+ * centre is the middle of the stage; spread widens the line on wide stages.
  */
-export function drawDancers(c, scale, ground, { time, beat, step, entered, gogo, size = 1, places = null }) {
+export function drawDancers(c, scale, ground, {
+  time, beat, step, entered, gogo, size = 1, places = null, centre = 640, spread = 1,
+}) {
   DANCERS.forEach((dancer, index) => {
     const since = entered[dancer.id];
     if (since === undefined) return;
     if (places && places[dancer.id] === undefined) return;
-    const x = places ? places[dancer.id] : dancer.x;
+    const x = places ? places[dancer.id] : centre + dancer.from * spread;
     const arrive = easeBack(clamp((time - since) / 0.45));
     if (arrive <= 0) return;
     const hop = Math.max(0, Math.sin(beat * Math.PI)) * (gogo ? 22 : 12);
@@ -173,7 +184,7 @@ export function drawDancers(c, scale, ground, { time, beat, step, entered, gogo,
     c.translate(0, -hop + (1 - arrive) * 60);
     c.rotate(lean);
     c.scale(size * arrive * (2 - squash), size * arrive * squash);
-    stamp(c, entry, -SIZE.width / 2, -SIZE.height + 6);
+    stamp(c, entry, -SIZE.width / 2 - PAD.side, -SIZE.height + 6 - PAD.top);
     c.restore();
   });
 }

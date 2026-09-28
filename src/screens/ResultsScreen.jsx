@@ -128,7 +128,7 @@ export function ResultsScreen({ song, result, outcome, onRetry, onSongs }) {
         </div>
       </div>
 
-      <div className="results-mascot"><Mascot size={230} mood={result.cleared ? 'happy' : 'sad'} bpm={song.bpm} drumming={result.cleared} /></div>
+      <div className="results-mascot"><Mascot size={276} mood={result.cleared ? 'happy' : 'sad'} bpm={song.bpm} drumming={result.cleared} /></div>
 
       <nav className="results-actions" aria-label="What next">
         <button className={`button large ${choice === 0 ? 'selected' : ''}`} onPointerMove={() => { if (live.current.choice !== 0) focus(0); }} onFocus={() => focus(0)} onClick={() => choose(0)}>

@@ -4,7 +4,7 @@ import {
   DISPLAY, DON, FONT, GOLD, INK, KA, ROLL, TAU,
   box, clamp, disc, easeBack, easeOut, label, lerp, path, radial, ring, seeded, star,
 } from './draw.js';
-import { LANE, TARGET } from '../layout.js';
+import { LANE, STAGE, TARGET } from '../layout.js';
 
 const JUDGE = {
   good: { text: '良', fill: '#ffd23a', stroke: '#c8341e', glow: '#ffb03a' },
@@ -20,6 +20,10 @@ export class Effects {
 
   clear() {
     this.items = [];
+  }
+
+  dismiss(type) {
+    this.items = this.items.filter(item => item.type !== type);
   }
 
   add(item) {
@@ -235,7 +239,8 @@ function drawBanner(c, item, t) {
   const leave = t > 0.8 ? (t - 0.8) / 0.2 : 0;
   c.save();
   c.globalAlpha = 1 - leave;
-  c.translate(lerp(1500, 830, enter) - leave * 200, 100);
+  // Banners cross the sky above the festival, where they cover no text.
+  c.translate(lerp(STAGE.width + 280, STAGE.width / 2, enter) - leave * 260, 360 + 58);
   c.transform(1, 0, -0.18, 1, 0, 0);
   box(c, -250, -30, 500, 60, 10, INK);
   box(c, -244, -24, 488, 48, 7, item.color);

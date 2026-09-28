@@ -25,7 +25,7 @@ function sheet(c, scale) {
   label(c, 'Festival friends', 60, 720, { size: 32, fill: '#1a1014', stroke: null, width: 0 });
   DANCERS.forEach((dancer, i) => {
     const entry = dancerSprite(dancer.id, scale * 1.6);
-    stamp(c, entry, 70 + i * 230, 750, 130 * 1.6, 150 * 1.6);
+    stamp(c, entry, 40 + i * 230, 740, entry.width * 1.4, entry.height * 1.4);
   });
   ['don', 'ka', 'bigDon', 'bigKa'].forEach((type, i) => drawNote(c, type, 1260 + (i % 2) * 140, 800 + Math.floor(i / 2) * 130, scale));
 }
@@ -47,7 +47,7 @@ function sprites(c, scale, t) {
     drawMascot(c, 150 + i * 290, 640, 1.3, { bob, left: i % 2 ? swing : 0, right: i % 2 ? 0 : swing, mood, time: t, blink: t % 3 < 0.12, jump: mood === 'happy' ? Math.abs(Math.sin(t * 4)) * 40 : 0 });
     label(c, mood, 150 + i * 290, 700, { size: 20, align: 'center', width: 5 });
   });
-  DANCERS.forEach((dancer, i) => stamp(c, dancerSprite(dancer.id, scale), 60 + i * 180, 780));
+  DANCERS.forEach((dancer, i) => stamp(c, dancerSprite(dancer.id, scale), 30 + i * 230, 780));
 }
 
 export function Gallery() {

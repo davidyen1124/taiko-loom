@@ -3,7 +3,7 @@ import {
   CREAM, CREAM_SHADE, DISPLAY, DON, DON_LIGHT, FONT, INK, KA, KA_LIGHT, TAU,
   box, clamp, disc, ellipse, label, line, path, radial, ring, sprite, stamp, star, vertical,
 } from './draw.js';
-import { DRUM, GAUGE, PANEL } from '../layout.js';
+import { DRUM, GAUGE, PANEL, STAGE } from '../layout.js';
 import { COMBO_SHOWN_FROM, LEVELS } from '../rules.js';
 
 export function drawIcon(c, icon, x, y, r) {
@@ -173,7 +173,7 @@ export function drawPanel(c, scale, { difficulty, score, combo, comboPop, flashe
   drawDrum(c, scale, flashes, punch);
   if (combo >= COMBO_SHOWN_FROM) {
     const stretch = 1 + 0.16 * clamp(comboPop);
-    const size = combo >= 1000 ? 40 : combo >= 100 ? 47 : 54;
+    const size = combo >= 1000 ? 35 : combo >= 100 ? 47 : 54;
     let fill = '#fff';
     if (combo >= 100) fill = vertical(c, -size / 2, size / 2, [[0, '#fff1b8'], [0.5, '#ffc321'], [1, '#ff5a1e']]);
     else if (combo >= 50) fill = vertical(c, -size / 2, size / 2, [[0, '#ffffff'], [1, '#c9d3e6']]);
@@ -181,7 +181,8 @@ export function drawPanel(c, scale, { difficulty, score, combo, comboPop, flashe
     c.translate(DRUM.x, DRUM.y - 6);
     c.scale(1, stretch);
     label(c, String(combo), 0, 0, {
-      size, align: 'center', baseline: 'middle', fill, stroke: INK, width: 9, family: DISPLAY, weight: 400, shadow: 3,
+      size, align: 'center', baseline: 'middle', fill, stroke: INK, width: combo >= 1000 ? 8 : 9, family: DISPLAY, weight: 400, shadow: 3,
+      spacing: combo >= 1000 ? -1.5 : 0, maxWidth: DRUM.radius * 2 - 8,
     });
     c.restore();
     label(c, 'コンボ', DRUM.x, DRUM.y + 38, {
@@ -203,7 +204,7 @@ export function drawGauge(c, { value, clear, time, pulse = 0 }) {
   c.save();
   // frame: a low bar up to the clear line, then a tall tab to the right edge
   box(c, x - 8, bottom - height - 6, width + 16, height + 12, 8, INK);
-  box(c, splitX - 7, y - 6, 1280 - (splitX - 7) + 12, tall + 12, 10, INK);
+  box(c, splitX - 7, y - 6, STAGE.width - (splitX - 7) + 12, tall + 12, 10, INK);
 
   for (let i = 0; i < segments; i++) {
     const past = i >= clearAt;

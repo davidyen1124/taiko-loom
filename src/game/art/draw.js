@@ -87,11 +87,37 @@ export function line(c, x1, y1, x2, y2, stroke, width = 3, cap = 'round') {
   c.stroke();
 }
 
+// Makes text fit a width without distorting it: the size steps down to
+// `minSize`, and only then is the end replaced by an ellipsis.
+export function fitText(c, text, maxWidth, { size, minSize = size, weight = 900, family = FONT, spacing = 0 }) {
+  if ('letterSpacing' in c) c.letterSpacing = `${spacing}px`;
+  let fitted = size;
+  const measure = value => { c.font = `${weight} ${fitted}px ${family}`; return c.measureText(value).width; };
+  while (fitted > minSize && measure(text) > maxWidth) fitted = Math.max(minSize, fitted - 1);
+  let shown = text;
+  if (measure(shown) > maxWidth) {
+    const letters = [...text];
+    while (letters.length > 1 && measure(`${letters.join('').trimEnd()}…`) > maxWidth) letters.pop();
+    shown = `${letters.join('').trimEnd()}…`;
+  }
+  if ('letterSpacing' in c) c.letterSpacing = '0px';
+  return { text: shown, size: fitted, shortened: shown !== text };
+}
+
 // Text with a solid outline behind it, the signature look of arcade HUDs.
+// With `maxWidth`, text that is too long is squeezed; pass `minSize` as well
+// to shrink and then shorten it instead, which keeps the letters in shape.
 export function label(c, text, x, y, {
   size = 24, weight = 900, family = FONT, fill = '#fff', stroke = INK, width = 6,
-  align = 'left', baseline = 'alphabetic', spacing = 0, shadow = 0, shadowColor = INK, maxWidth,
+  align = 'left', baseline = 'alphabetic', spacing = 0, shadow = 0, shadowColor = INK, maxWidth, minSize,
 } = {}) {
+  if (maxWidth && minSize) {
+    const fitted = fitText(c, text, maxWidth, { size, minSize, weight, family, spacing });
+    text = fitted.text;
+    width *= fitted.size / size;
+    size = fitted.size;
+    maxWidth = undefined;
+  }
   c.font = `${weight} ${size}px ${family}`;
   c.textAlign = align;
   c.textBaseline = baseline;
