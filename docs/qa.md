@@ -8,7 +8,7 @@ server and a local backend. Viewports: 1280 x 720, 844 x 390 (phone, sideways) a
 
 | Suite | Command | Result |
 | --- | --- | --- |
-| Rules engine, on-device analyser and stage layout | `npm test` | 29 passed |
+| Rules engine, browser analyser, built-in songs and stage layout | `npm test` | 42 passed |
 | Backend analysis, charting and API | `npm run test:backend` | 29 passed |
 | Hosting worker and build output | `npm run build && npm run test:sites` | 4 passed |
 
@@ -49,6 +49,30 @@ server and a local backend. Viewports: 1280 x 720, 844 x 390 (phone, sideways) a
 | Phone upright | Rotate hint shown, can be dismissed | Pass |
 | Touch | Four zones fill the screen; taps map to ka, don, don, ka | Pass |
 | Touch | Tap on the pause button is not counted as a drum hit | Pass |
+
+## The public site, in Chromium and WebKit
+
+Tested on 2026-09-27 with Playwright driving headless Chromium and WebKit (Safari's
+engine) against `npm run preview:pages`, which serves the static build under
+`/taiko-nights/` as GitHub Pages does. 35 checks in each browser, all passing.
+
+| Area | What was done | Result |
+| --- | --- | --- |
+| Loading | No console errors, no missing files, artwork and icon load from the sub-path | Pass |
+| Loading | Every request stays inside the site folder; nothing asks for `/api` | Pass |
+| Loading | No audio file is downloaded at any point | Pass |
+| Title | Status reads "analysed in your browser", never "offline" | Pass |
+| Song select | Three built-in songs, each with its own colour, 3 charts each | Pass |
+| Play | Raijin Rush on Hard in auto play: 456 of 456 良, no misses, over 1,000,000 | Pass |
+| Play | A built-in song is ready within 0.2 s of choosing it | Pass |
+| Add a song | 3:57 MP3 analysed in the browser in 3.0 s (Chromium), 1.4 s (WebKit) | Pass |
+| Add a song | No network request is made while it is analysed | Pass |
+| Add a song | 126 BPM, 264 / 469 / 768 notes, matching the backend | Pass |
+| Saved songs | Still on the shelf after a reload, previews and plays | Pass after fix 20 |
+| Remove song | Gone after a reload, nothing left in storage | Pass |
+| Cut-off text | Audit on title, shelf, each song, add dialog, pause and results | Pass |
+| Window shapes | Audit at 1280 x 720, 1024 x 768, 1366 x 1024, 1920 x 1080, 2560 x 1080 and 844 x 390: 74 screens | Pass |
+| Phone upright | 390 x 844 shows the rotate hint | Pass |
 
 ## Bugs found and fixed during QA
 
@@ -101,6 +125,16 @@ Causes and fixes:
 17. **Moon sliced by the frame edge** at some widths. It is shown whole or not at all.
 18. **Lane whited out on a hit during Go-Go Time.** The flash is softer.
 
+19. **Built-in songs took 10 to 28 seconds to prepare** in Chrome and Safari. The Web
+    Audio graph slows down with every note scheduled on it. The songs are now
+    synthesised in plain JavaScript in a worker, in under a second.
+20. **Safari would not save an added song.** It refused to store the file object. The
+    file is now saved as plain bytes.
+21. **The built-in music was 6 ms behind its chart.** The old mixing stage delayed the
+    sound. The new one does not: the music is within 2 ms of the chart.
+22. **Loud peaks clipped at full volume** (up to 8% over full scale). Every song is now
+    levelled under a limiter.
+
 The audit measures each text's letters, grows that box by half the outline width, and
 tests it against every ancestor that clips. It switches animations off while it
 measures, so a panel that is still sliding open is judged by where it ends up.
@@ -110,8 +144,15 @@ measures, so a panel that is still sliding open is judged by where it ends up.
 - The browser pane used for QA draws about two frames a second when it is not in
   view. Animation was therefore judged from stepped frames (below) rather than by
   watching it in motion. Smoothness on a real display was not measured.
-- Safari, Firefox and physical phones were not tested.
-- Sound was verified by code path and by synthesis output level, not by ear.
+- WebKit was tested through Playwright, not Safari itself. Firefox and physical
+  phones were not tested.
+- Sound was verified by measurement, not by ear: level, tuning of every pitched
+  instrument, timing against the chart, and a spectrogram of each song. Whether the
+  three songs are pleasant to listen to needs a person.
+- The backend reads the 168 BPM built-in song as 112 BPM with a shuffle, a 3:2
+  confusion. The browser analyser reads it correctly. Not yet fixed in the backend.
+- Bar lines can land half a bar out on music whose first and third beats are alike.
+  Both analysers agree with each other when this happens.
 - Chart quality on real music was checked for tempo, structure and playability, not
   for how musical it feels. That needs a person with the song playing.
 - Bluetooth and TV latency differ per device. Use the timing offset in Settings.
