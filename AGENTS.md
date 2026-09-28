@@ -1,25 +1,55 @@
-# Taiko Loom Repository Guidelines
+# Taiko Nights: notes for contributors and coding agents
 
-## Project Structure & Module Organization
-Mono-repo for Taiko Loom with `backend/` (FastAPI) and `frontend/` (Vite + React). Core API modules live in `backend/src/taiko_backend/` (`audio.py`, `jobs.py`, `schemas.py`, `main.py`). UI code sits in `frontend/src/` (`api.ts`, `App.tsx`) and static assets in `frontend/public/`. Add your own short MP3 at the project root when manually testing.
+## Working on it
 
-## Build, Test, and Development Commands
-- `cd backend && uv python install 3.11 && uv sync` — bootstrap the Python toolchain (first run).
-- `cd backend && uv run fastapi dev taiko_backend.main:app --host 0.0.0.0 --port 8000` — start the API with hot reload.
-- `cd frontend && npm install` — install Node dependencies.
-- `cd frontend && npm run dev` — launch Vite dev server (defaults to http://localhost:5173).
-- `cd frontend && npm run build` / `npm run preview` — build and smoke-test production bundles.
-- `cd frontend && npm run lint` — lint UI before committing.
+Run the servers yourself and look at the result in a browser. Do not hand the user
+start-up instructions when you can run it.
 
-## Coding Style & Naming Conventions
-Python modules use 4-space indentation, type hints, and snake_case functions. Keep Pydantic models in `schemas.py` singular (`ChartResponse`, etc.) and validate inputs at route boundaries. React components belong in PascalCase files (`App.tsx`), hooks/utilities in camelCase exports (`api.ts`), and styling centralized in `App.css`/`index.css`. Run `npm run lint` to enforce ESLint + TypeScript rules and model chart modes with explicit union types instead of loose strings.
-TypeScript: prefer `import type { … }` and named hooks (no default `React` import). Use `RefObject`, `FormEvent`, `DragEventHandler`, etc., directly from `react`.
+- `npm run api` starts the analysis backend on port 8000 (FastAPI, managed by uv).
+- `npm run dev -- --port 4173` starts the game. `/api` is proxied to the backend.
+- `/?gallery` shows every sprite. `/?gallery=sheet` renders the character model sheet.
+- In development `window.__taiko` exposes `{ renderer, game, audio }` while a song is
+  playing, so a run can be stepped frame by frame. `docs/qa.md` shows how.
 
-## Quality Checks & Manual Verification
-There are no automated tests yet, so validate changes manually. Run both services (`uv run fastapi dev ...` and `npm run dev`), upload a short MP3 (<30s), and confirm `/audio/{job}` reaches a playable lane. When tweaking chart heuristics, inspect `/audio` JSON payloads and compare note density across modes. On the UI, rely on `npm run lint` plus smoke tests in the browser before pushing.
+## Rules that must hold
 
-## Commit & Pull Request Guidelines
-Use Conventional Commits (`fix(frontend): ...`) with scopes that map to repo directories. PRs must summarize user impact, list validation steps, link issues, and include screenshots or terminal output for UI/API changes. Document the manual scenarios you exercised (e.g., which MP3, which density mode) and ensure `npm run lint` passes before asking for review.
+1. **Never commit audio.** `.gitignore` excludes audio extensions and `backend/data/`.
+   Tests synthesise their own audio. Check `git status` before every commit.
+2. **All artwork is original.** Do not add or imitate characters, sprites, logos,
+   sounds or charts from any existing game. New art that shows Loomi must match
+   `docs/art/loomi-model-sheet.png`; the checklist is in `docs/art/README.md`.
+3. **The stage is 1280 x 720.** Every position lives in `src/game/layout.js` or in
+   stage units in `src/styles.css`. The stage scales as a whole; nothing should depend
+   on the window size.
+4. **Rules stay out of the renderer.** `src/game/engine.js` takes the song time as an
+   argument and has no timers, audio or drawing, which is what makes it testable.
+   Numbers belong in `src/game/rules.js`.
+5. **Menus read live state.** Key handlers read from a ref updated during render, so
+   two keys pressed in quick succession never act on a stale screen. Hover selection
+   follows real pointer movement only.
+6. **Both analysers share one chart format** (`version: 2`). If you change it, change
+   `backend/src/taiko_backend/charting.py`, `src/game/analyze.js` and
+   `src/game/demoSong.js` together.
 
-## Environment & Configuration Tips
-Keep FFmpeg on your PATH so `librosa` can decode MP3 uploads. Set API overrides for `frontend/src/api.ts` by defining `VITE_API_BASE_URL` in `frontend/.env.local` (or the appropriate Vite env file) and keep secrets out of Git. Use a short MP3 for smoke tests (15–30 second snippets keep processing quick).
+## Before you commit
+
+```bash
+npm test && npm run test:backend && npm run build && npm run test:sites
+```
+
+Use Conventional Commits (`feat:`, `fix:`, `docs:`), as the history does.
+
+## Hosting hand-off
+
+Keep `.openai/hosting.json`, `worker/index.js`, `scripts/prepare-sites-build.mjs` and
+`tests/sites-worker.test.mjs` intact. `npm run build` must leave
+`dist/client/index.html`, `dist/server/index.js` and `dist/.openai/hosting.json`.
+A static host serves the game with the on-device analyser; the backend is separate.
+
+## Design decisions on record
+
+- Notes are drum heads seen from above with a painted swirl. They have no faces.
+- The mascot is Loomi, a tanuki who drums on a belly drum. Five festival friends
+  (daruma, fox, lucky cat, paper lantern, rice cakes) join as the soul gauge fills.
+- Score stamps are this game's own: 灯 花 月 祭 天.
+- Painted plates carry no text. Stall lettering and lantern glow are drawn in code.

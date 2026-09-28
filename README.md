@@ -1,62 +1,172 @@
-# Taiko Loom
+# Taiko Nights
 
-![Taiko Loom gameplay preview](./demo.gif)
+A festival taiko rhythm game for the browser. Upload any song, the backend finds its
+beat and writes Easy, Medium and Hard charts, and you play it with four keys.
 
-Taiko Loom transforms uploaded MP3s into Taiko-drum-friendly note charts. The backend (FastAPI + `librosa`) analyzes audio, while the frontend (Vite + React) lets players preview charts and drum along from the browser.
+![Go-Go Time during a song](docs/screens/play-gogo.webp)
 
-## Repo Layout
-- `backend/` – FastAPI service in `src/taiko_backend/` (`audio.py`, `jobs.py`, `schemas.py`, `main.py`).
-- `frontend/` – Vite/React client in `src/` with `api.ts` handling HTTP calls and `App.tsx` rendering the lane.
-- bring your own short MP3 clip for smoke tests (15–30s keeps iterations fast).
+| Drumroll | Balloon |
+| --- | --- |
+| ![Drumroll with its hit counter](docs/screens/play-drumroll.webp) | ![Balloon note with hits remaining](docs/screens/play-balloon.webp) |
 
-## Prerequisites
-- [`uv`](https://github.com/astral-sh/uv) (bundled in this repo’s tooling)
-- Python 3.11 (managed via `uv`)
-- Node.js 18+ and npm
-- FFmpeg available on your PATH for reliable MP3 decoding
+Everything here is original: the code, the mascot (Loomi the tanuki), the festival
+friends, the notes and the built-in song. See [docs/art](docs/art/README.md).
 
-## Quick Start
-1. **Backend**
-   ```bash
-   cd backend
-   uv python install 3.11      # first run
-   uv sync                     # installs dependencies into .venv
-   uv run fastapi dev taiko_backend.main:app --host 0.0.0.0 --port 8000
-   ```
-2. **Frontend**
-   ```bash
-   cd frontend
-   npm install
-   npm run dev                 # launches Vite on http://localhost:5173
-   ```
-3. (Optional) For production bundles: `npm run build` followed by `npm run preview`.
+## Run it
 
-Set `VITE_API_BASE_URL` in `frontend/.env.local` (or another Vite env file) if your backend is not on `http://localhost:8000`. Example:
-```
-VITE_API_BASE_URL=https://your-hosted-backend.example.com
+You need Node 20+, [uv](https://github.com/astral-sh/uv) and FFmpeg on your PATH.
+
+```bash
+npm install
 ```
 
-## Backend Service Highlights
-- `/audio` (POST multipart) accepts `file` plus optional `mode` (`balanced`, `dense`, `sparse`) and immediately returns a job id.
-- `/audio/{job}` (GET) lets the frontend poll for status/results.
-- Internals:
-  - `audio.py` performs beat detection with `librosa` and emits note metadata.
-  - `jobs.py` tracks asynchronous processing.
-  - `schemas.py` defines Pydantic models for request/response validation.
+```bash
+npm run api
+```
 
-## Frontend App Highlights
-- `src/api.ts` centralizes all API calls and pulls `import.meta.env.VITE_API_BASE_URL`.
-- `App.tsx` renders the upload controls, status, and keyboard lane (`F/J` for red hits, `D/K` for blue hits).
-- Styling lives in `App.css` and `index.css`; assets go under `public/`.
-- Lint before committing: `npm run lint`.
+```bash
+npm run dev -- --port 4173
+```
 
-## Manual Verification (No Automated Tests Yet)
-1. Run both services (`uv run fastapi dev ...` and `npm run dev`).
-2. Upload a short MP3 clip (<30s) to keep iterations fast.
-3. Watch the request lifecycle in your devtools: initial `/audio` POST should yield a job id, followed by `/audio/{job}` polling until status is `done`.
-4. In the UI, confirm the rendered lane matches expectations across `balanced`, `dense`, and `sparse` modes. Capture screenshots or JSON snippets for PRs when behavior changes.
+Open http://localhost:4173. The first `npm run api` installs the Python dependencies.
 
-## Contributing
-- Follow the Conventional Commits style used in Git history (`fix(frontend): derive preparedNotes from job payload`).
-- Document manual test coverage in PR descriptions (which track, which density mode).
-- Refer to `AGENTS.md` for contributor guidelines covering coding style, repo layout, and manual QA expectations.
+The game also runs without the backend. The built-in song "Lantern Parade" is
+synthesised in the browser, and uploads fall back to a lighter analyser that runs on
+your device.
+
+## Play
+
+| Key | Drum |
+| --- | --- |
+| `F` `J` | ドン Don, the face (red notes) |
+| `D` `K` | カッ Ka, the rim (blue notes) |
+| `F`+`J` or `D`+`K` | Big notes pay double when both sticks land together |
+| any drum key, fast | Drumrolls (yellow) |
+| `F` `J`, fast | Balloons: hit the face the number of times shown |
+| `Esc` | Pause |
+
+Menus are played like the drum: `D` `K` move, `F` `J` confirm, `Esc` goes back. Arrow
+keys and Enter work too. On a touch screen the whole display is the drum: the outer
+fifths are the rim, the middle is the face.
+
+Settings hold music and drum volume, note speed, a timing offset with a tap-along
+measuring tool, auto play and the touch guide. Settings and personal records are kept
+in this browser's local storage.
+
+## Your music
+
+Choose **曲をついか / Add your music** on the song shelf and pick a file (MP3, WAV, FLAC,
+OGG or M4A, up to 100 MB and 15 minutes). The backend:
+
+1. converts the upload to FLAC, the file the browser will play, so chart times and
+   playback share one sample-accurate timeline
+2. separates percussive sound and measures attacks overall, in the kick band and in
+   the high band
+3. tracks the beat, fits a steady grid to it, and checks that grid against tempos the
+   tracker commonly confuses (half, double, 3:2, 2:3)
+4. finds the downbeat from bass attacks and chord changes
+5. places notes on the grid: Easy on beats, Medium adds half-beats, Hard adds
+   quarter-beats in short runs
+6. assigns Don to bass-heavy attacks and Ka to bright ones
+7. turns the loudest sections into Go-Go Time, leads into them with a drumroll and
+   follows the first two with a balloon
+
+Songs live in `backend/data/`, which is ignored by git.
+
+**Audio is never committed.** `.gitignore` excludes every common audio extension and
+the backend's data folder. Tests synthesise their own audio.
+
+### Accuracy
+
+Measured on synthetic drum loops of known tempo (`npm run test:backend`):
+
+| Check | Result |
+| --- | --- |
+| Tempo at 96, 110, 120, 138, 150 and 165 BPM | within 0.05 BPM |
+| Beat placement | within 8 ms of the real attack |
+| Shuffle rhythm | detected, keeps its own tempo |
+| 70 BPM song | charted at 140 so the grid stays playable |
+
+Real music is harder than drum loops. Songs with a tempo that drifts fall back to the
+tracked beats instead of a fixed grid. Songs with no clear pulse are rejected with a
+message rather than given invented notes. If a chart feels early or late on your
+speakers, use the timing offset in Settings.
+
+### Command line
+
+```bash
+npm run analyze -- path/to/song.mp3 --output chart.json
+```
+
+### API
+
+| Method | Path | Purpose |
+| --- | --- | --- |
+| `GET` | `/api/health` | Status and chart version |
+| `GET` | `/api/songs` | The library |
+| `POST` | `/api/songs` | Upload `file` (and optional `title`, `artist`). Returns a job. |
+| `GET` | `/api/jobs/{id}` | Job status, stage and progress |
+| `GET` | `/api/songs/{id}` | Charts, beats, bar lines, Go-Go sections |
+| `GET` | `/api/songs/{id}/audio` | The playable FLAC, with range requests |
+| `PATCH` | `/api/songs/{id}` | Rename |
+| `DELETE` | `/api/songs/{id}` | Remove the song and its audio |
+
+Set `VITE_API_BASE_URL` to use a backend on another origin, `TAIKO_DATA_DIR` to move
+the library, and `TAIKO_CORS_ORIGINS` to restrict who may call the API.
+
+## Rules
+
+| | Easy かんたん | Medium ふつう | Hard むずかしい |
+| --- | --- | --- | --- |
+| 良 Good window | ±42 ms | ±42 ms | ±25 ms |
+| 可 OK window | ±108 ms | ±108 ms | ±75 ms |
+| Clear line on the soul gauge | 60% | 70% | 70% |
+| A miss costs | half a Good | one Good | 1.25 Goods |
+
+- Scoring is fixed per note: every 良 pays the same and 可 pays half. A flawless run
+  with every big note struck two-handed totals 1,000,000 before drumrolls.
+- Drumrolls pay 100 a hit (200 for big ones). Balloons pay 300 a hit and 5,000 on the pop.
+- Hitting the wrong face of the drum is ignored, not punished.
+- Crowns: silver for a clear, gold for a full combo, rainbow for all 良.
+- Score stamps: 灯 500k, 花 700k, 月 850k, 祭 950k, 天 1,000,000.
+
+These follow the conventions of the genre, researched in
+[docs/references.md](docs/references.md). The score stamps, the artwork and the chart
+generator are this game's own.
+
+## Test
+
+```bash
+npm test
+```
+
+```bash
+npm run test:backend
+```
+
+```bash
+npm run build && npm run test:sites
+```
+
+22 engine and analyser tests, 29 backend tests, 4 hosting tests. What was checked by
+hand in the browser is recorded in [docs/qa.md](docs/qa.md).
+
+## Layout
+
+| Path | What lives there |
+| --- | --- |
+| `src/game/engine.js` | Rules: judging, scoring, gauge, drumrolls, balloons, auto play |
+| `src/game/rules.js` | Every number the rules use |
+| `src/game/renderer.js` | The play screen |
+| `src/game/art/` | All drawing code: notes, mascot, dancers, HUD, effects, scenery |
+| `src/game/audio.js` | Song clock and synthesised drum sounds |
+| `src/game/demoSong.js` | The built-in song and its charts, as data |
+| `src/game/analyze.js` | The on-device fallback analyser |
+| `src/screens/`, `src/ui/` | Title, song select, play, results, dialogs |
+| `backend/src/taiko_backend/` | `analysis.py` listens, `charting.py` writes charts, `main.py` serves |
+| `public/art/` | Two painted background plates |
+| `docs/` | Art notes, genre references, QA record, screenshots |
+
+`worker/`, `.openai/` and `scripts/prepare-sites-build.mjs` package the static build
+for hosting. A static host serves the game and the on-device analyser; the backend
+needs its own host.
