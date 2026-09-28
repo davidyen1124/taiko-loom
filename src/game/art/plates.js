@@ -18,3 +18,22 @@ export function loadPlates() {
 }
 
 export const plate = name => images[name] || null;
+
+// The colour along the bottom edge of a plate, used to continue its ground.
+const edges = {};
+export function plateEdge(name) {
+  if (edges[name]) return edges[name];
+  const image = images[name];
+  if (!image) return '#e0843e';
+  try {
+    const canvas = Object.assign(document.createElement('canvas'), { width: 8, height: 1 });
+    const context = canvas.getContext('2d');
+    context.drawImage(image, 0, image.naturalHeight - 3, image.naturalWidth, 2, 0, 0, 8, 1);
+    const data = context.getImageData(0, 0, 8, 1).data;
+    const mean = channel => Math.round([0, 1, 2, 3, 4, 5, 6, 7].reduce((sum, i) => sum + data[i * 4 + channel], 0) / 8);
+    edges[name] = `rgb(${mean(0)},${mean(1)},${mean(2)})`;
+  } catch {
+    edges[name] = '#e0843e';
+  }
+  return edges[name];
+}

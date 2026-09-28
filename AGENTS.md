@@ -8,6 +8,8 @@ start-up instructions when you can run it.
 - `npm run api` starts the analysis backend on port 8000 (FastAPI, managed by uv).
 - `npm run dev -- --port 4173` starts the game. `/api` is proxied to the backend.
 - `/?gallery` shows every sprite. `/?gallery=sheet` renders the character model sheet.
+- In development `await __auditText()` lists any text that is cut off on the screen
+  you are looking at. Run it on every screen you touch, at more than one window shape.
 - In development `window.__taiko` exposes `{ renderer, game, audio }` while a song is
   playing, so a run can be stepped frame by frame. `docs/qa.md` shows how.
 
@@ -18,16 +20,23 @@ start-up instructions when you can run it.
 2. **All artwork is original.** Do not add or imitate characters, sprites, logos,
    sounds or charts from any existing game. New art that shows Loomi must match
    `docs/art/loomi-model-sheet.png`; the checklist is in `docs/art/README.md`.
-3. **The stage is 1280 x 720.** Every position lives in `src/game/layout.js` or in
-   stage units in `src/styles.css`. The stage scales as a whole; nothing should depend
-   on the window size.
-4. **Rules stay out of the renderer.** `src/game/engine.js` takes the song time as an
+3. **The stage fills the window. Never letterbox it.** The design grid is 1280 x 720.
+   A wider window adds columns, a taller one adds rows (`stageFor` and `setStage` in
+   `src/game/layout.js`). Read sizes from `STAGE` at draw time, not at import time. In
+   CSS, `--ox` and `--oy` say where the design grid begins and `--foot` is the curtain
+   under the festival.
+4. **Nothing may be cut off.** Outlined text that is also clipped needs padding equal
+   to its outline (see the note at the top of `src/styles.css`). Canvas text that can
+   be long uses `minSize` in `label()`, which shrinks and then shortens it; it is never
+   squeezed. Sprites need room for whatever sticks out of the figure. Pictures are
+   never zoomed in a way that crops their subject.
+5. **Rules stay out of the renderer.** `src/game/engine.js` takes the song time as an
    argument and has no timers, audio or drawing, which is what makes it testable.
    Numbers belong in `src/game/rules.js`.
-5. **Menus read live state.** Key handlers read from a ref updated during render, so
+6. **Menus read live state.** Key handlers read from a ref updated during render, so
    two keys pressed in quick succession never act on a stale screen. Hover selection
    follows real pointer movement only.
-6. **Both analysers share one chart format** (`version: 2`). If you change it, change
+7. **Both analysers share one chart format** (`version: 2`). If you change it, change
    `backend/src/taiko_backend/charting.py`, `src/game/analyze.js` and
    `src/game/demoSong.js` together.
 

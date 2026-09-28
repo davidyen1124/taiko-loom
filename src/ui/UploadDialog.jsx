@@ -97,7 +97,7 @@ export function UploadDialog({ online, onClose, onAdded }) {
     <Dialog title="Add your music" kana="曲をついか" onClose={onClose} className="upload" locked={busy}>
       {busy ? (
         <div className="upload-progress" role="status" aria-live="polite">
-          <Mascot size={190} mood="gogo" bpm={150} drumming />
+          <Mascot size={228} mood="gogo" bpm={150} drumming />
           <strong>{status.message}</strong>
           <div className="meter" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(status.progress * 100)}>
             <i style={{ width: `${Math.round(status.progress * 100)}%` }} />

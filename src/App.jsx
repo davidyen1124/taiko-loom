@@ -139,7 +139,7 @@ export function App() {
 
       {loading && (
         <div className="loading" role="status" aria-live="polite">
-          <Mascot size={200} mood="idle" bpm={140} drumming />
+          <Mascot size={240} mood="idle" bpm={140} drumming />
           <strong>{loading.title}</strong>
           <div className="meter"><i style={{ width: `${Math.round(loading.progress * 100)}%` }} /></div>
           <span>じゅんびちゅう… Getting the stage ready</span>

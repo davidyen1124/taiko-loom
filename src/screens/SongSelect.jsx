@@ -4,6 +4,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Plus, Settings2, CircleHelp, Trash2, ChevronLeft, ChevronRight, Bot } from 'lucide-react';
 import { Backdrop } from '../ui/Backdrop.jsx';
+import { useStage } from '../ui/Stage.jsx';
 import { Crown, LevelIcon, Stars } from '../ui/icons.jsx';
 import { audio } from '../game/audio.js';
 import { menuAction } from '../game/input.js';
@@ -25,6 +26,7 @@ const GAP = 14;
 const OPEN = 560;        // open banner width
 
 export function SongSelect({ songs, records, settings, online, busy, initial, onPlay, onAdd, onDelete, onSettings, onHelp, onBack }) {
+  const stage = useStage();
   const items = [{ id: 'add', add: true }, ...songs];
   const [index, setIndex] = useState(() => Math.max(1, items.findIndex(item => item.id === initial)));
   const [open, setOpen] = useState(false);
@@ -124,7 +126,7 @@ export function SongSelect({ songs, records, settings, online, busy, initial, on
   const before = index * (BAR + GAP);
   const isOpen = open && !current.add;
   const width = isOpen ? OPEN : BAR;
-  const shift = 640 - before - width / 2;
+  const shift = stage.width / 2 - before - width / 2;
 
   return (
     <section className="select" aria-label="Song select">

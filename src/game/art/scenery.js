@@ -4,8 +4,8 @@ import {
 } from './draw.js';
 import { plate } from './plates.js';
 
-export const TOP = { width: 1280, height: 184 };
-export const SCENE = { width: 1280, height: 360 };
+// the code-drawn festival is laid out on this grid and scaled to cover the scene
+const SCENE = { width: 1280, height: 360 };
 
 const GARLAND = ['#f2452b', '#fff1cf', '#ffc42e', '#fff1cf', '#4fc0d8', '#fff1cf'];
 
@@ -87,20 +87,20 @@ function drawLantern(c, x, y, w, h, color, glow = 1) {
   c.restore();
 }
 
-export function drawTopBand(c, scale, time, mood, blend) {
+export function drawTopBand(c, scale, time, mood, blend, width, height) {
   // mood: night | clear | gogo; blend 0..1 fades from night to the mood
   c.save();
-  c.beginPath(); c.rect(0, 0, TOP.width, TOP.height); c.clip();
-  drawWaves(c, scale, time, 'night', TOP.width, TOP.height);
+  c.beginPath(); c.rect(0, 0, width, height); c.clip();
+  drawWaves(c, scale, time, 'night', width, height);
   if (mood !== 'night' && blend > 0) {
     c.globalAlpha = clamp(blend);
-    drawWaves(c, scale, time, mood, TOP.width, TOP.height);
+    drawWaves(c, scale, time, mood, width, height);
     c.globalAlpha = 1;
   }
   // soft vignette keeps the HUD readable
-  c.fillStyle = vertical(c, 0, TOP.height, [[0, 'rgba(10,4,20,.45)'], [0.35, 'rgba(10,4,20,0)'], [1, 'rgba(10,4,20,.35)']]);
-  c.fillRect(0, 0, TOP.width, TOP.height);
-  drawGarland(c, time, TOP.width);
+  c.fillStyle = vertical(c, 0, height, [[0, 'rgba(10,4,20,.45)'], [0.35, 'rgba(10,4,20,0)'], [1, 'rgba(10,4,20,.35)']]);
+  c.fillRect(0, 0, width, height);
+  drawGarland(c, time, width);
   c.restore();
 }
 
@@ -304,62 +304,126 @@ function glowSprite(scale) {
   });
 }
 
-// The painted plate is 3:1. The scene slot is wider, so a band is cropped
-// from it; positions below are in scene units after that crop.
-const PLATE = { width: 2172, height: 724, top: 52 };
-const PLATE_SCALE = SCENE.width / PLATE.width;
+// The painted plate is 3:1. It is scaled to the width of the scene and a band
+// is cut from it. All measurements are in plate pixels.
+const PLATE = {
+  width: 2172, height: 724, base: 1280 / 2172,
+  plaza: 538,                                  // first row of open ground
+  moon: { x: 1910, y: 80, r: 58 },
+  sky: 'rgb(31,20,74)',
+};
+// sign boards and lantern centres, measured on the plate in plate pixels
 const PLATE_SIGNS = [
-  { x: 133, text: 'だんご', ink: '#fff6e0' },
-  { x: 378, text: 'からあげ', ink: '#fff6e0' },
-  { x: 904, text: 'りんごあめ', ink: '#8a3a0a' },
-  { x: 1149, text: 'かきごおり', ink: '#fff6e0' },
+  { x: 226, text: 'だんご', ink: '#fff6e0' },
+  { x: 641, text: 'からあげ', ink: '#fff6e0' },
+  { x: 1534, text: 'りんごあめ', ink: '#8a3a0a' },
+  { x: 1950, text: 'かきごおり', ink: '#fff6e0' },
 ];
-// lantern centres measured on the plate, in plate pixels
+const PLATE_SIGN_Y = 288;
 const PLATE_LANTERNS = [
   [54, 87], [166, 128], [278, 154], [391, 179], [505, 187], [621, 179], [741, 163], [847, 128],
   [1323, 128], [1425, 163], [1540, 187], [1657, 204], [1777, 204], [1895, 187], [2011, 157], [2120, 114],
   [948, 163], [1221, 163], [46, 391], [400, 391], [471, 391], [806, 391], [1366, 391], [1700, 391], [1777, 391], [2120, 391],
 ];
 
-function paintPlate(c) {
-  const image = plate('festival');
-  const band = SCENE.height / PLATE_SCALE;
-  c.drawImage(image, 0, PLATE.top, PLATE.width, band, 0, 0, SCENE.width, SCENE.height);
-  const y = (288 - PLATE.top) * PLATE_SCALE;
-  for (const sign of PLATE_SIGNS) {
-    label(c, sign.text, sign.x, y, {
-      size: sign.text.length > 4 ? 24 : 28, align: 'center', baseline: 'middle', fill: sign.ink, stroke: INK, width: 5, family: FONT, maxWidth: 170,
-    });
-  }
+// The curtain under the plaza: red and white festival stripes.
+export function drawFooter(c, width, height) {
+  if (height <= 0) return;
+  c.save();
+  c.beginPath(); c.rect(0, 0, width, height); c.clip();
+  c.fillStyle = CREAM; c.fillRect(0, 0, width, height);
+  c.fillStyle = DON;
+  const stripe = 44;
+  for (let x = -((width / 2) % (stripe * 2)) - stripe * 2; x < width; x += stripe * 2) c.fillRect(x + width / 2 % 1, 0, stripe, height);
+  c.fillStyle = vertical(c, 0, height, [[0, 'rgba(26,16,20,.28)'], [0.18, 'rgba(26,16,20,0)'], [0.7, 'rgba(26,16,20,0)'], [1, 'rgba(26,16,20,.3)']]);
+  c.fillRect(0, 0, width, height);
+  box(c, -4, -3, width + 8, 9, 0, '#8a4a22', INK, 3);
+  c.restore();
 }
 
-export function drawScene(c, scale, time, { gogo = 0, cleared = 0 } = {}) {
+// How a picture of the given size covers a width x height scene.
+function cover(picture, width, height, focus) {
+  const zoom = Math.max(width / picture.width, height / picture.height);
+  const left = (picture.width - width / zoom) / 2;
+  const top = (picture.height - height / zoom) * focus;
+  return { zoom, left, top, x: px => (px - left) * zoom, y: py => (py - top) * zoom };
+}
+
+// Which band of the plate a scene shows. The band is placed so the dancers,
+// who stand 22 rows above the bottom of the scene, have their feet on the
+// plaza. The moon is shown whole or not at all, never sliced by the top edge.
+export function framePlate(width, height) {
+  const zoom = Math.max(width / PLATE.width, height / PLATE.height);
+  const spare = PLATE.height - height / zoom;
+  const feet = (height - 22) / zoom;
+  const top = clamp(PLATE.plaza + 45 - feet, 0, spare);
+  const left = (PLATE.width - width / zoom) / 2;
+  const { moon } = PLATE;
+  const hideMoon = top > moon.y - moon.r - 4 && top < moon.y + moon.r + 10;
+  return { zoom, left, top, hideMoon, x: px => (px - left) * zoom, y: py => (py - top) * zoom };
+}
+
+// One painted scene is kept at a time, so resizing the window cannot pile them up.
+let painted = { key: '', canvas: null };
+
+function paintedPlate(width, height, scale) {
+  const key = `${width}x${height}@${scale.toFixed(3)}`;
+  if (painted.key === key) return painted.canvas;
+  const canvas = typeof OffscreenCanvas !== 'undefined'
+    ? new OffscreenCanvas(Math.ceil(width * scale), Math.ceil(height * scale))
+    : Object.assign(document.createElement('canvas'), { width: Math.ceil(width * scale), height: Math.ceil(height * scale) });
+  const c = canvas.getContext('2d');
+  c.scale(scale, scale);
+  const fit = framePlate(width, height);
+  c.imageSmoothingQuality = 'high';
+  c.drawImage(plate('festival'), fit.left, fit.top, width / fit.zoom, height / fit.zoom, 0, 0, width, height);
+  if (fit.hideMoon) disc(c, fit.x(PLATE.moon.x), fit.y(PLATE.moon.y), (PLATE.moon.r + 9) * fit.zoom, PLATE.sky);
+  const grow = fit.zoom / PLATE.base;
+  for (const sign of PLATE_SIGNS) {
+    label(c, sign.text, fit.x(sign.x), fit.y(PLATE_SIGN_Y), {
+      size: (sign.text.length > 4 ? 24 : 28) * grow, align: 'center', baseline: 'middle',
+      fill: sign.ink, stroke: INK, width: 5 * grow, family: FONT, maxWidth: 170 * grow,
+    });
+  }
+  painted = { key, canvas };
+  return canvas;
+}
+
+export function drawScene(c, scale, time, { gogo = 0, cleared = 0, width = SCENE.width, height = SCENE.height } = {}) {
   const glow = glowSprite(scale);
   if (plate('festival')) {
-    stamp(c, sprite('festival-plate', SCENE.width, SCENE.height, scale, paintPlate), 0, 0);
+    c.drawImage(paintedPlate(width, height, scale), 0, 0, width, height);
+    const fit = framePlate(width, height);
+    const size = 120 * (fit.zoom / PLATE.base);
     c.save();
     c.globalCompositeOperation = 'lighter';
     PLATE_LANTERNS.forEach(([px, py], i) => {
       const pulse = 0.42 + 0.22 * Math.sin(time * 2.4 + i * 1.7) + 0.3 * gogo;
       c.globalAlpha = clamp(pulse);
-      stamp(c, glow, px * PLATE_SCALE - 60, (py - PLATE.top) * PLATE_SCALE - 60);
+      stamp(c, glow, fit.x(px) - size / 2, fit.y(py) - size / 2, size, size);
     });
     c.restore();
   } else {
-    drawPaintedScene(c, scale, time, gogo, glow);
+    // code-drawn fallback, anchored to the ground and centred
+    const fit = cover(SCENE, width, height, 1);
+    c.save();
+    c.translate(-fit.left * fit.zoom, -fit.top * fit.zoom);
+    c.scale(fit.zoom, fit.zoom);
+    drawPaintedScene(c, scale * fit.zoom, time, gogo, glow);
+    c.restore();
   }
   if (cleared > 0) {
     // warm wash once the song is being cleared
     c.save();
     c.globalAlpha = 0.16 * cleared;
-    c.fillStyle = vertical(c, 0, SCENE.height, [[0, '#ffd76a'], [1, 'rgba(255,215,106,0)']]);
-    c.fillRect(0, 0, SCENE.width, SCENE.height);
+    c.fillStyle = vertical(c, 0, height, [[0, '#ffd76a'], [1, 'rgba(255,215,106,0)']]);
+    c.fillRect(0, 0, width, height);
     c.restore();
   }
 }
 
 function drawPaintedScene(c, scale, time, gogo, glow) {
-  const base = sprite('festival', SCENE.width, SCENE.height, scale, paintScene);
+  const base = sprite('festival', SCENE.width, SCENE.height, Math.min(4, scale), paintScene);
   stamp(c, base, 0, 0);
   c.save();
   c.globalCompositeOperation = 'lighter';

@@ -23,13 +23,15 @@ export function NoteIcon({ type, size = 64 }) {
   return <Art width={size} height={size} draw={draw} />;
 }
 
+// Loomi in a box of his own. The figure is drawn at 1/300 of the box per
+// unit, which leaves room for raised sticks, the tail and a jump.
 export function Mascot({ size = 200, mood = 'idle', bpm = 120, drumming = false }) {
   const draw = useCallback((c, time) => {
     const beats = time * (bpm / 60);
     const beat = beats % 1;
     const left = drumming ? Math.max(0, 1 - ((beats % 2) * 3)) : 0;
     const right = drumming ? Math.max(0, 1 - (((beats + 1) % 2) * 3)) : 0;
-    drawMascot(c, size / 2, size * 0.96, size / 250, {
+    drawMascot(c, size * 0.49, size * 0.97, size / 300, {
       bob: Math.max(0, 1 - beat * 2.6), left, right, mood, time, blink: time % 3.7 < 0.12,
       jump: mood === 'happy' ? Math.abs(Math.sin(beats * Math.PI)) * size * 0.06 : 0,
     });
