@@ -1,7 +1,23 @@
 // Music transport and synthesised drum sounds. The song clock is derived
 // from the audio hardware clock, so notes stay locked to what is heard.
+//
+// Audio hardware tells its time in steps, and on some phones and headphones
+// the steps are long. Read as it is, such a clock makes notes stutter on a
+// display that is drawing every frame on time. So the clock the game reads
+// runs on the display's own clock and is steered toward the hardware's: it
+// moves evenly, and stays with the music.
 
 export const LEAD_IN = 2.2;        // seconds of scrolling before the music starts
+
+const STEER = 0.04;                // how much of the way toward the hardware clock, each reading
+const JUMP = 0.05;                 // seconds: further off than this, the clock is set, not steered
+
+// Steers `lead`, the song's lead over the display's clock, toward a new
+// reading of it. A first reading, or one far off, is taken as it is.
+export function steer(lead, reading) {
+  if (lead === null || Math.abs(reading - lead) > JUMP) return reading;
+  return lead + (reading - lead) * STEER;
+}
 
 class AudioEngine {
   constructor() {
@@ -11,6 +27,7 @@ class AudioEngine {
     this.playing = false;
     this.position = -LEAD_IN;     // song time while paused
     this.startedAt = 0;           // context time that corresponds to song time 0
+    this.lead = null;             // song time minus display time, steered
     this.volumes = { music: 0.8, sfx: 0.8 };
   }
 
@@ -68,9 +85,11 @@ class AudioEngine {
   }
 
   // Current song time in seconds. Negative during the lead-in.
-  time(performanceNow) {
+  time(performanceNow = performance.now()) {
     if (!this.playing) return this.position;
-    return this.heard(performanceNow) - this.startedAt;
+    const shown = performanceNow / 1000;
+    this.lead = steer(this.lead, this.heard(performanceNow) - this.startedAt - shown);
+    return shown + this.lead;
   }
 
   play(from = this.position) {
@@ -85,6 +104,7 @@ class AudioEngine {
     else this.source.start(begin, Math.min(from, this.buffer.duration));
     this.startedAt = begin - from;
     this.position = from;
+    this.lead = null;
     this.playing = true;
     return true;
   }

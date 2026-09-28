@@ -75,6 +75,15 @@ start-up instructions when you can run it.
    graph, which took 10 to 28 seconds a song in Chrome and Safari. `npm test` renders
    every song and checks its level, its tuning and that it is in time with its chart.
 
+12. **Every frame is on time, on a phone too.** The play screen draws one canvas and
+   almost no DOM. Pictures that are drawn every frame are scaled once and kept
+   (`sprite` in `src/game/art/draw.js`). How many pixels are drawn is decided in
+   `src/game/pacer.js`, nowhere else: at most two device pixels for each CSS pixel on
+   a device played with fingers, three with a mouse, and fewer when frames keep
+   arriving late. Menu backdrops are painted 30 times a second on a phone. Read song
+   time from `audio.time()`, which is steadied, never from `context.currentTime`.
+   Check a change with `?fps` in the address.
+
 ## Before you commit
 
 ```bash

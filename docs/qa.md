@@ -10,7 +10,7 @@ it was then.
 
 | Suite | Command | Result |
 | --- | --- | --- |
-| Rules engine, analyser, built-in songs, stage layout and artwork | `npm test` | 55 passed |
+| Rules engine, analyser, built-in songs, stage layout and artwork | `npm test` | 64 passed |
 | Hosting worker and build output | `npm run build && npm run test:sites` | 4 passed |
 
 ## Checked by hand
@@ -141,6 +141,29 @@ from the home screen, with its safe areas put in by hand), 667 x 375 (iPhone SE)
 | Title | Yoru's head is whole on a window as wide as 844 x 291 (the feet are not) | Pass after fix 31 |
 | Desktop | Play screen at 1280 x 720, 1862 x 1017, 1024 x 768 and 2560 x 1080 compared pixel by pixel with the version before: identical but for the judgement word of fix 30 | Pass |
 | Whole site | The 36 end-to-end checks of the static build, in both browsers | Pass, 72 of 72 |
+
+## Smoothness
+
+Tested on 2026-09-28 after the game was reported to be laggy on a real iPhone, in
+every screen. The report could not be reproduced: the iPhone itself was not at hand,
+and in headless WebKit on a fast Mac every screen drew 60 frames a second before the
+changes as well as after. What follows is what was measured there, and what was
+changed because it is sound on any phone. See fix 32.
+
+| Area | What was done | Result |
+| --- | --- | --- |
+| Cost of a frame | Play screen at 844 x 390, three device pixels to one, Hard, Go-Go Time. Frames drawn back to back, each forced to finish by reading a pixel back: 2.6 ms a frame, of which 0.4 ms is JavaScript | Measured |
+| Cost of a frame | The same without text: 2.0 ms. Without pictures: 2.2 ms. No one part stands out | Measured |
+| Song clock | Frame to frame, the song moved within 0.24 ms (WebKit) and 0.06 ms (Chromium) of what the display's clock moved | Pass |
+| Song clock | Over a hardware clock that moves in steps of 23 ms, the steadied clock moves within 1.2 ms of the display's and stays within one step of the music | Pass, automated |
+| Pixels | A phone of three device pixels to one draws the play screen and the backdrops at two: 1688 x 780, not 2532 x 1170 | Pass |
+| Pacer | Frames on time at 60, 120 and 144 Hz: the picture is left alone. An odd late frame, a pause or a hidden tab: left alone | Pass, automated |
+| Pacer | A device that needs 27 ms for a frame, or a steady 25 ms: the picture is stepped down until frames are on time, within four steps and a few seconds | Pass, automated |
+| Pacer | A display that holds itself to 30 frames a second, as an iPhone saving power does: one look at the smallest picture, then the whole picture is kept | Pass, automated |
+| Pacer | In headless Chromium, which draws without a graphics card, at 2560 x 1440: stepped down to 80% and then drew 60 frames a second | Pass |
+| Backdrops | Painted 30 times a second on a device played with fingers, 60 with a mouse | Pass |
+| Frame meter | `?fps` shows frames a second, the longest wait, late frames and the size of the picture, on every screen | Pass |
+| Desktop | Play screen at 1280 x 720, 1862 x 1017 and 1024 x 768 compared pixel by pixel with the version before: identical | Pass |
 
 ## Without a server
 
@@ -276,6 +299,14 @@ Causes and fixes:
     The burst of a popped balloon had the same fault.
 31. **On a very wide window the title picture lost the top of Yoru's head.** The band
     that is shown now starts above the leaf, and gives up the feet instead.
+32. **The game was reported laggy on an iPhone, on every screen.** Not reproduced
+    here. Three things were changed that lighten the load on any phone: two device
+    pixels are drawn for each CSS pixel in place of three, which is less than half the
+    pixels; the picture is drawn smaller still if frames keep arriving late; and menu
+    backdrops are painted half as often. One thing was changed that makes motion even
+    where frames were already on time: the song's clock no longer follows the audio
+    hardware's step by step. `?fps` was added so that the next report can come with
+    numbers.
 
 The audit measures each text's letters, grows that box by half the outline width, and
 tests it against every ancestor that clips. It switches animations off while it
@@ -295,6 +326,9 @@ measures, so a panel that is still sliding open is judged by where it ends up.
   gestures are not.
 - Drawing smoothness was measured without a graphics card. On a real display it was
   not measured.
+- The lag reported from an iPhone was not reproduced, so it is not known which of the
+  changes in fix 32 matter on that phone, or whether the phone was saving power, which
+  holds any web page to 30 frames a second.
 - The pictures were judged by one pair of eyes. Whether Yoru is appealing is for
   players to say.
 - Sound was verified by measurement, not by ear: level, tuning of every pitched

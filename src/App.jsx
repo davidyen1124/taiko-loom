@@ -8,6 +8,7 @@ import { ResultsScreen } from './screens/ResultsScreen.jsx';
 import { SettingsDialog } from './ui/SettingsDialog.jsx';
 import { HelpDialog } from './ui/HelpDialog.jsx';
 import { UploadDialog } from './ui/UploadDialog.jsx';
+import { FrameMeter } from './ui/FrameMeter.jsx';
 import { Mascot } from './ui/icons.jsx';
 import { audio } from './game/audio.js';
 import { FIRST_SONG, renderDemoAudio } from './game/songs/index.js';
@@ -18,6 +19,8 @@ import { loadAudio, loadShelf, loadSong, removeSong } from './library.js';
 import { stopPreview } from './preview.js';
 import { forgetSong, hasSeen, loadRecords, loadSettings, markSeen, saveRecord, saveSettings } from './storage.js';
 import './styles.css';
+
+const METER = typeof window !== 'undefined' && new URLSearchParams(window.location.search).has('fps');
 
 export function App() {
   const [screen, setScreen] = useState('title');
@@ -151,6 +154,7 @@ export function App() {
         </div>
       )}
       {error && <p className="toast" role="alert">{error}</p>}
+      {METER && <FrameMeter />}
     </Stage>
   );
 }

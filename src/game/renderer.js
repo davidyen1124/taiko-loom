@@ -8,6 +8,7 @@ import { drawMascot } from './art/mascot.js';
 import { drawBalloon, drawNote, drawRoll, drawTarget } from './art/notes.js';
 import { drawFooter, drawScene, drawTopBand } from './art/scenery.js';
 import { BEAT_WIDTH, FRAME, GAUGE, LANE, MASCOT, SAFE, SCENE_Y, STAGE, TARGET, TITLE, TOP_HEIGHT } from './layout.js';
+import { keepPace, pixelRatio, startPacer } from './pacer.js';
 import { GAUGE as GAUGE_RULES, LEVELS, isHit, isRoll } from './rules.js';
 
 const FLASH = 0.13;
@@ -52,13 +53,16 @@ export class Renderer {
     this.context = canvas.getContext('2d', { alpha: false });
     this.effects = new Effects();
     this.scale = 1;
+    this.finger = typeof window !== 'undefined' && window.matchMedia('(pointer: coarse)').matches;
+    this.pacer = startPacer();
+    this.seen = 0;               // when the frame before was drawn, in ms
     this.resize();
   }
 
   // The canvas covers the whole stage, whatever shape the window gave it.
   resize() {
     const rect = this.canvas.getBoundingClientRect();
-    const ratio = Math.min(window.devicePixelRatio || 1, 3);
+    const ratio = pixelRatio({ finger: this.finger }) * this.pacer.quality;
     const width = Math.max(1, Math.round(rect.width * ratio));
     const height = Math.max(1, Math.round(width * (STAGE.height / STAGE.width)));
     if (this.canvas.width !== width || this.canvas.height !== height) {
@@ -67,6 +71,16 @@ export class Renderer {
       clearSprites();
     }
     this.scale = width / STAGE.width;
+  }
+
+  // Frames that keep arriving late are drawn with fewer pixels from then on.
+  pace() {
+    const at = performance.now();
+    const late = this.pacer.frame(at - this.seen);
+    this.seen = at;
+    if (!late) return;
+    keepPace(this.pacer);
+    this.resize();
   }
 
   // Spreads a row of positions laid out on the design grid across the stage.
@@ -213,6 +227,7 @@ export class Renderer {
 
   draw(time, now) {
     const c = this.context;
+    this.pace();
     const { game, scale, effects } = this;
     const delta = Math.min(0.1, Math.max(0, now - this.last));
     this.last = now;
