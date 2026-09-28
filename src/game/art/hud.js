@@ -177,11 +177,16 @@ export function drawDrum(c, scale, flashes, punch = 0) {
 }
 
 export function drawPanel(c, scale, { difficulty, score, combo, comboPop, flashes, punch }) {
+  if (STAGE.left > 0) {
+    // under a notch the panel's colour carries on to the edge of the display
+    c.fillStyle = vertical(c, PANEL.y, PANEL.y + PANEL.height, [[0, '#d8482a'], [1, '#b02f18']]);
+    c.fillRect(-STAGE.left, PANEL.y, STAGE.left + 1, PANEL.height);
+  }
   stamp(c, panelBase(scale), PANEL.x, PANEL.y);
   // score tab, top left
   c.beginPath();
-  c.moveTo(0, PANEL.y); c.lineTo(178, PANEL.y); c.lineTo(178, PANEL.y + 24);
-  c.arcTo(178, PANEL.y + 40, 162, PANEL.y + 40, 16); c.lineTo(0, PANEL.y + 40); c.closePath();
+  c.moveTo(-STAGE.left, PANEL.y); c.lineTo(178, PANEL.y); c.lineTo(178, PANEL.y + 24);
+  c.arcTo(178, PANEL.y + 40, 162, PANEL.y + 40, 16); c.lineTo(-STAGE.left, PANEL.y + 40); c.closePath();
   c.fillStyle = '#0d090c'; c.fill();
   label(c, String(score), 164, PANEL.y + 21, {
     size: 27, align: 'right', baseline: 'middle', fill: '#fff', stroke: null, width: 0, family: DISPLAY, weight: 400, spacing: 1.5, maxWidth: 150,
@@ -221,7 +226,8 @@ export function drawGauge(c, { value, clear, time, pulse = 0 }) {
   c.save();
   // frame: a low bar up to the clear line, then a tall tab to the right edge
   box(c, x - 8, bottom - height - 6, width + 16, height + 12, 8, INK);
-  box(c, splitX - 7, y - 6, STAGE.width - (splitX - 7) + 12, tall + 12, 10, INK);
+  // runs off the end of the display, or stops short of a notch
+  box(c, splitX - 7, y - 6, STAGE.width - STAGE.left - STAGE.right - (splitX - 7) + 12, tall + 12, 10, INK);
 
   for (let i = 0; i < segments; i++) {
     const past = i >= clearAt;

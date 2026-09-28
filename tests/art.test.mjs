@@ -6,6 +6,7 @@ import { poseOf } from '../src/game/art/mascot.js';
 import { DANCERS } from '../src/game/art/dancers.js';
 import { ATLASES } from '../src/game/art/sprites.js';
 import { PADS } from '../src/game/input.js';
+import { reserveFor, stageFor } from '../src/game/layout.js';
 import { LEVELS } from '../src/game/rules.js';
 import { SKIN, drumLayout, drumTopAt, onSkin, padAt } from '../src/game/touchDrum.js';
 
@@ -116,49 +117,78 @@ test('the site carries pictures, never audio', () => {
 
 // ---- the touch drum --------------------------------------------------------
 
-const WINDOWS = [[844, 390], [932, 430], [667, 375], [1180, 820], [1366, 1024], [2560, 1080]];
+const LANE_ENDS = 360;            // rows down a stage of 720
+const IPHONE = { top: 0, right: 47, bottom: 21, left: 47 };     // held sideways: notch and home strip
+const IPHONE_UPRIGHT = { top: 47, right: 0, bottom: 34, left: 0 };
+const PLAIN = { top: 0, right: 0, bottom: 0, left: 0 };
+const SIDEWAYS = [[844, 390, IPHONE], [932, 430, IPHONE], [667, 375, PLAIN], [740, 360, PLAIN], [1180, 820, { ...PLAIN, bottom: 20 }], [1366, 1024, PLAIN]];
 
-test('sideways, the drum rises from the bottom edge and leaves the lane alone', () => {
-  for (const [width, height] of WINDOWS) {
-    const drum = drumLayout(width, height);
-    const top = drum.cy - drum.ry;
-    // the lane ends 400 rows down a stage of 720
-    assert.ok(top >= height * (400 / 720) - 1, `${width}x${height}: the drum covers the lane (top ${top})`);
-    assert.ok(top < height * 0.75, `${width}x${height}: the drum is too small to play`);
-    assert.equal(drum.cx, width / 2);
-    assert.ok(drum.cx - drum.rx >= 0 && drum.cx + drum.rx <= width, `${width}x${height}: wider than the window`);
+// the drum as the play screen lays it out: stage first, then the drum under its lane
+function sideways(width, height, inset) {
+  const stage = stageFor(width, height, { touch: true, reserve: reserveFor(height, inset.bottom) });
+  const laneBottom = LANE_ENDS * stage.scale;
+  return { stage, laneBottom, drum: drumLayout(width, height, { laneBottom, inset }) };
+}
+
+test('sideways, the stage moves up and the whole head of the drum fits under the lane', () => {
+  for (const [width, height, inset] of SIDEWAYS) {
+    const { stage, laneBottom, drum } = sideways(width, height, inset);
+    const where = `${width}x${height}`;
+    assert.equal(stage.docked, true);
+    assert.ok(stage.height * stage.scale <= height - inset.bottom - 26 + 0.5, `${where}: the stage leaves no room under it`);
+    assert.ok(Math.abs(stage.width * stage.scale - width) < 1, `${where}: the stage does not fill the width`);
+    assert.ok(drum.cy - drum.ry >= laneBottom, `${where}: the drum covers the lane`);
+    assert.ok(drum.cx - drum.rx >= inset.left && drum.cx + drum.rx <= width - inset.right, `${where}: the drum runs under the notch`);
     assert.ok(Math.abs(drum.skin.rx / drum.rx - SKIN) < 1e-9 && Math.abs(drum.skin.ry / drum.ry - SKIN) < 1e-9);
-    // enough skin on screen for a thumb: at least 56 px high
-    assert.ok(height - (drum.cy - drum.skin.ry) >= 56, `${width}x${height}: only ${height - (drum.cy - drum.skin.ry)} px of skin`);
+    assert.ok(drum.skin.ry * 2 >= 96, `${where}: the skin is only ${Math.round(drum.skin.ry * 2)} px high`);
+    assert.ok(drum.skin.rx * 2 >= width * 0.45, `${where}: the skin is only ${Math.round(drum.skin.rx * 2)} px wide`);
+    assert.equal(drum.floor, height, 'the barrel runs to the edge of the display');
   }
 });
 
-test('upright, the drum sits whole in the space under the stage', () => {
-  for (const [width, height, stageBottom] of [[390, 844, 219], [430, 932, 242], [360, 640, 203], [820, 1180, 898]]) {
-    const drum = drumLayout(width, height, { upright: true, stageBottom });
-    assert.ok(drum.cy - drum.ry >= stageBottom, `${width}x${height}: the drum covers the stage`);
-    assert.ok(drum.cy + drum.ry + drum.depth <= height + 1, `${width}x${height}: the drum runs off the bottom`);
+test('nothing to tap sits on the strip the phone keeps along the bottom', () => {
+  for (const [width, height, inset] of SIDEWAYS) {
+    const { drum } = sideways(width, height, inset);
+    const clear = height - (drum.cy + drum.ry);
+    assert.ok(clear >= inset.bottom + 16, `${width}x${height}: the head ends ${Math.round(clear)} px from the edge`);
+    assert.ok(height - (drum.cy + drum.skin.ry) >= inset.bottom + 40, `${width}x${height}: the skin is too near the edge`);
+    // a touch on the strip still plays, as the rim: no touch is wasted
+    for (const x of [8, width * 0.3, width / 2 - 1, width * 0.7, width - 8]) assert.equal(padAt(x, height - 4, drum).kind, 'ka');
+  }
+  for (const [width, height, stageBottom] of [[390, 844, 266], [430, 932, 289], [375, 667, 211], [820, 1180, 508]]) {
+    const drum = drumLayout(width, height, { upright: true, stageBottom, inset: IPHONE_UPRIGHT });
+    assert.ok(height - drum.floor >= IPHONE_UPRIGHT.bottom + 28 - 0.5, `${width}x${height}: the drum ends ${Math.round(height - drum.floor)} px from the edge`);
+  }
+});
+
+test('upright, the drum sits whole and high in the space under the stage', () => {
+  for (const [width, height, stageBottom] of [[390, 844, 266], [430, 932, 289], [375, 667, 211], [360, 640, 203], [820, 1180, 508]]) {
+    const drum = drumLayout(width, height, { upright: true, stageBottom, inset: IPHONE_UPRIGHT });
+    const where = `${width}x${height}`;
+    assert.ok(drum.cy - drum.ry >= stageBottom, `${where}: the drum covers the stage`);
+    assert.ok(Math.abs(drum.floor - (drum.cy + drum.ry + drum.depth)) < 1e-9);
     assert.ok(drum.cx - drum.rx >= 0 && drum.cx + drum.rx <= width);
-    assert.ok(drum.skin.ry * 2 >= 110, `${width}x${height}: the skin is only ${Math.round(drum.skin.ry * 2)} px high`);
+    assert.ok(drum.skin.ry * 2 >= 140, `${where}: the skin is only ${Math.round(drum.skin.ry * 2)} px high`);
+    // nearer the stage than the bottom edge
+    assert.ok(drum.cy - drum.ry - stageBottom <= height - drum.floor, `${where}: the drum hangs low`);
   }
 });
 
 test('the skin plays don, everything else plays ka, and each side is a hand', () => {
   const [kaLeft, donLeft, donRight, kaRight] = PADS;
-  for (const [width, height] of WINDOWS) {
-    const drum = drumLayout(width, height);
-    const low = height - 30;
-    assert.equal(padAt(drum.cx - drum.skin.rx * 0.4, low, drum), donLeft);
-    assert.equal(padAt(drum.cx + drum.skin.rx * 0.4, low, drum), donRight);
-    assert.equal(padAt(8, low, drum), kaLeft, 'the bottom corner is the rim');
-    assert.equal(padAt(width - 8, low, drum), kaRight);
+  for (const [width, height, inset] of SIDEWAYS) {
+    const { drum } = sideways(width, height, inset);
+    assert.equal(padAt(drum.cx - drum.skin.rx * 0.4, drum.cy, drum), donLeft);
+    assert.equal(padAt(drum.cx + drum.skin.rx * 0.4, drum.cy, drum), donRight);
+    assert.equal(padAt(8, drum.cy, drum), kaLeft, 'beside the drum is the rim');
+    assert.equal(padAt(width - 8, drum.cy, drum), kaRight);
     assert.equal(padAt(drum.cx - 40, 20, drum), kaLeft, 'above the drum is the rim too: no touch is wasted');
-    assert.equal(padAt(drum.cx + drum.rx * 0.9, low, drum), kaRight, 'the painted rim');
-    // what a thumb resting a third of the way in, near the bottom, plays
-    assert.equal(padAt(width * 0.3, height - 40, drum).kind, 'don', `${width}x${height}: a resting thumb misses the skin`);
-    assert.equal(padAt(width * 0.7, height - 40, drum).kind, 'don');
+    assert.equal(padAt(drum.cx + drum.rx * 0.9, drum.cy, drum), kaRight, 'the painted rim');
+    // thumbs resting a third of the way in, level with the middle of the drum
+    assert.equal(padAt(width * 0.32, drum.cy, drum).kind, 'don', `${width}x${height}: a resting thumb misses the skin`);
+    assert.equal(padAt(width * 0.68, drum.cy, drum).kind, 'don');
   }
-  const drum = drumLayout(390, 844, { upright: true, stageBottom: 219 });
+  const drum = drumLayout(390, 844, { upright: true, stageBottom: 266, inset: IPHONE_UPRIGHT });
   assert.equal(padAt(drum.cx - 10, drum.cy, drum), donLeft);
   assert.equal(padAt(drum.cx + drum.rx * 0.85, drum.cy, drum), kaRight);
   assert.equal(padAt(drum.cx - drum.rx * 0.85, drum.cy, drum), kaLeft);
@@ -166,7 +196,7 @@ test('the skin plays don, everything else plays ka, and each side is a hand', ()
 });
 
 test('the friends can find the far edge of the drum', () => {
-  const drum = drumLayout(844, 390);
+  const { drum } = sideways(844, 390, IPHONE);
   assert.equal(drumTopAt(drum.cx, drum), drum.cy - drum.ry);
   assert.ok(drumTopAt(drum.cx + drum.rx * 0.8, drum) > drumTopAt(drum.cx, drum), 'the edge falls away toward the sides');
   assert.equal(drumTopAt(drum.cx - drum.rx - 1, drum), null);

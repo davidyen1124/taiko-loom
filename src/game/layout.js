@@ -10,11 +10,14 @@ export const SAFE = { width: 1280, height: 720 };
 // Beyond these shapes the window is padded rather than stretched further.
 export const WIDEST = 2.4;          // a little past 21:9
 export const TALLEST = 4 / 3;
+// With the touch drum docked under it the stage is shorter, so it may be wider.
+export const WIDEST_DOCKED = 2.9;
 
 // Live size of the stage, and where rows added by a tall window went:
 // `top` to the sky band, `bottom` to the festival, `foot` to the curtain
-// under the plaza.
-export const STAGE = { width: SAFE.width, height: SAFE.height, top: 0, bottom: 0, foot: 0 };
+// under the plaza. `left` and `right` are columns the device keeps for itself
+// (a notch, rounded corners): pictures run under them, the HUD stays clear.
+export const STAGE = { width: SAFE.width, height: SAFE.height, top: 0, bottom: 0, foot: 0, left: 0, right: 0 };
 
 export const TOP_HEIGHT = 184;
 
@@ -46,25 +49,33 @@ export const TITLE = { x: 1256, y: 64, maxWidth: 700 };
 // 1000 units, so quarter-beat notes overlap slightly: the classic dense look.
 export const BEAT_WIDTH = 250;
 
+// How much of a sideways window is kept free under the stage while the touch
+// drum is on screen: the strip the device keeps for itself, and a little more.
+export const reserveFor = (windowHeight, inset = 0) => Math.round(inset + Math.min(40, Math.max(26, windowHeight * 0.08)));
+
 // The stage that fills a window of the given size. `touch` says the device is
-// played with fingers, as a tablet is.
-export function stageFor(windowWidth, windowHeight, { touch = false } = {}) {
+// played with fingers, as a tablet is. `reserve` is the height kept free under
+// the stage; the stage then sits at the top of the window.
+export function stageFor(windowWidth, windowHeight, { touch = false, reserve = 0 } = {}) {
   const w = Math.max(1, windowWidth);
   const h = Math.max(1, windowHeight);
   // A phone or tablet held upright: the stage sits at the top and the drum takes the rest.
   if ((w < 700 || touch) && h > w * 1.2) {
-    return { width: SAFE.width, height: SAFE.height, scale: w / SAFE.width, upright: true };
+    return { width: SAFE.width, height: SAFE.height, scale: w / SAFE.width, upright: true, docked: false };
   }
-  // The stage takes the window's exact shape, so not even one pixel is left over.
-  const shape = Math.min(WIDEST, Math.max(TALLEST, w / h));
+  // The stage takes the exact shape of the room it has, so not even one pixel is left over.
+  const room = Math.max(1, h - reserve);
+  const shape = Math.min(reserve ? WIDEST_DOCKED : WIDEST, Math.max(TALLEST, w / room));
   const wide = shape >= SAFE.width / SAFE.height;
   const width = wide ? Math.round(SAFE.height * shape * 100) / 100 : SAFE.width;
   const height = wide ? SAFE.height : Math.round((SAFE.width / shape) * 100) / 100;
-  return { width, height, scale: Math.min(w / width, h / height), upright: false };
+  return { width, height, scale: Math.min(w / width, room / height), upright: false, docked: reserve > 0 };
 }
 
 // Applies a stage size. Positions that hang off the right edge follow it.
-export function setStage(width, height) {
+// `left` and `right` are columns kept clear of the HUD, in stage units. The
+// HUD is drawn from `left`, so its positions are measured from there.
+export function setStage(width, height, { left = 0, right = 0 } = {}) {
   const extra = Math.max(0, height - SAFE.height);
   // The festival picture has about 60 rows to spare at full width. It is never
   // zoomed to fill more, because that would crop the stalls at both ends.
@@ -75,10 +86,13 @@ export function setStage(width, height) {
   STAGE.bottom = bottom;
   STAGE.top = top;
   STAGE.foot = extra - bottom - top;
-  LANE.width = width - LANE.x;
-  GAUGE.x = width - 802;
-  GAUGE.orbX = width - 44;
-  TITLE.x = width - 24;
-  TITLE.maxWidth = Math.min(900, width - 580);
+  STAGE.left = left;
+  STAGE.right = right;
+  const inner = width - left - right;
+  LANE.width = width - left - LANE.x;          // notes come in from the very edge of the display
+  GAUGE.x = inner - 802;
+  GAUGE.orbX = inner - 44;
+  TITLE.x = inner - 24;
+  TITLE.maxWidth = Math.min(900, inner - 580);
   return STAGE;
 }
