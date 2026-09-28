@@ -51,28 +51,17 @@ button:focus-visible, input:focus-visible, [tabindex]:focus-visible { outline: 4
   position: absolute; left: 50%; top: 50%; transform-origin: center; overflow: hidden;
   background: var(--night); user-select: none; -webkit-user-select: none;
 }
-/* held upright, the stage sits at the top and the drum takes the rest */
-.stage-frame.upright .stage { top: env(safe-area-inset-top, 0px); transform-origin: top center; }
-/* sideways with the touch drum out, the stage sits at the top and a strip under
-   it is left free: the festival curtain hangs there, behind the drum */
-.stage-frame.docked .stage { top: 0; transform-origin: top center; }
-.stage-frame.docked::after {
-  content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: calc(var(--reserve) + 1px);
-  border-top: 3px solid var(--ink);
-  background:
-    linear-gradient(rgba(26, 16, 20, .34), rgba(26, 16, 20, .1) 30%, rgba(26, 16, 20, .5)),
-    repeating-linear-gradient(90deg, #f2452b 0 26px, #fff6e0 26px 52px);
-}
 .art { display: block; }
 .backdrop { position: absolute; inset: 0; z-index: 0; }
 
+/* the game is played sideways: held upright, a phone is asked to turn */
 .rotate-hint {
   position: fixed; inset: 0; z-index: 50; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 18px;
-  padding: 32px; text-align: center; background: rgba(14, 6, 22, .94); font-size: 18px; line-height: 1.5;
+  padding: 32px; text-align: center; background: #160b1c; font-size: 18px; line-height: 1.5;
 }
 .rotate-hint strong { font-size: 26px; }
-.rotate-hint svg { color: var(--gold); }
-.rotate-hint .button { font-size: 18px; min-height: 52px; padding: 0 26px; }
+.rotate-hint svg { color: var(--gold); animation: turn 2.4s ease-in-out infinite; }
+@keyframes turn { 0%, 20% { rotate: -90deg; } 60%, 100% { rotate: 0deg; } }
 
 /* ---- shared pieces -------------------------------------------------- */
 
@@ -349,23 +338,24 @@ body:has(.play) { touch-action: none; }
   background: rgba(255, 246, 224, .92); color: var(--ink); box-shadow: 0 4px 0 var(--ink);
 }
 .play-pause:active { transform: translateY(3px); box-shadow: 0 1px 0 var(--ink); }
-/* The touch drum is drawn on the page itself, outside the scaled stage, so it
-   is the size of a real thumb on any phone. The picture shows the drum from
-   straight above; stretching it wider than tall tilts it away from the player. */
-.touch-drum { position: fixed; z-index: 5; pointer-events: none; font-family: var(--round); font-weight: 900; color: #fff; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }
-.touch-drum-side { position: absolute; left: .5%; right: .5%; top: 50%; border: 3px solid var(--ink); border-top: 0; background: linear-gradient(90deg, #3d1006, #8f2a14 16%, #c4472a 50%, #8f2a14 84%, #3d1006); }
-.touch-drum-head { position: absolute; inset: 0; }
-.touch-drum-head img { position: absolute; inset: 0; width: 100%; height: 100%; display: block; -webkit-user-drag: none; user-select: none; }
-.touch-drum-light { position: absolute; opacity: 0; }
-.touch-drum-light.don { top: calc((1 - var(--skin)) * 50%); width: calc(var(--skin) * 50%); height: calc(var(--skin) * 100%); background: radial-gradient(ellipse farthest-side at var(--at) 50%, rgba(255, 170, 140, .95), rgba(242, 69, 43, .82) 70%, rgba(242, 69, 43, .7)); }
-.touch-drum-light.don.left { --at: 100%; left: calc((1 - var(--skin)) * 50%); border-radius: 100% 0 0 100% / 50% 0 0 50%; }
-.touch-drum-light.don.right { --at: 0%; left: 50%; border-radius: 0 100% 100% 0 / 0 50% 50% 0; }
-.touch-drum-light.ka { top: 0; width: 50%; height: 100%; background: radial-gradient(ellipse farthest-side at var(--at) 50%, transparent calc(var(--skin) * 100% + 1%), rgba(155, 230, 242, .95) calc(var(--skin) * 100% + 3%), rgba(79, 192, 216, .9) 97%, transparent 99%); }
-.touch-drum-light.ka.left { --at: 100%; left: 0; }
-.touch-drum-light.ka.right { --at: 0%; left: 50%; }
-.touch-drum-word { position: absolute; transform: translate(-50%, -50%); white-space: nowrap; font-size: clamp(15px, 2.6vmax, 30px); line-height: 1; letter-spacing: .04em; opacity: .92; -webkit-text-stroke: .24em var(--ink); paint-order: stroke fill; }
-.touch-drum-word.don { color: #ffd9cf; }
-.touch-drum-word.ka { color: #d5f6fc; font-size: clamp(13px, 2.1vmax, 24px); }
+/* played with fingers, the pause button is the size of one */
+.stage-frame.compact .play-pause { top: 10px; width: 84px; height: 84px; border-width: 5px; }
+.stage-frame.compact .play-pause svg { width: 42px; height: 42px; }
+/* The touch zones: rim, face, face, rim. They are drawn on the page itself,
+   outside the scaled stage, and are only light: the display plays at any
+   height, the colour stays under the lane and out of the way of the notes. */
+.touch-zones { position: fixed; left: 0; right: 0; bottom: 0; z-index: 5; display: grid; grid-template-columns: repeat(4, 1fr); pointer-events: none; font-family: var(--round); font-weight: 900; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }
+.touch-zone { position: relative; --tint: 242, 60, 40; background: linear-gradient(to top, rgba(var(--tint), .3), rgba(var(--tint), .1) 45%, rgba(var(--tint), 0) 92%); }
+.touch-zone.ka { --tint: 40, 150, 255; background: linear-gradient(to top, rgba(var(--tint), .4), rgba(var(--tint), .14) 45%, rgba(var(--tint), 0) 92%); }
+/* and one bright line along the bottom edge, which says the colour plainly */
+.touch-zone::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 4px; background: rgb(var(--tint)); box-shadow: 0 0 14px 2px rgba(var(--tint), .8); }
+/* a hairline between two zones, fading with the colour */
+.touch-zone + .touch-zone::before { content: ""; position: absolute; left: -.5px; top: 8%; bottom: 0; width: 1px; background: linear-gradient(to top, rgba(255, 255, 255, .5), rgba(255, 255, 255, 0)); }
+.touch-zone i { position: absolute; inset: 0; opacity: 0; background: linear-gradient(to top, rgba(var(--tint), .85), rgba(var(--tint), .4) 50%, rgba(var(--tint), 0)); }
+/* the words are a reminder for the first bars, then the zones are left clean */
+.touch-zone span { position: absolute; left: 50%; bottom: calc(var(--foot) + 14px); transform: translateX(-50%); white-space: nowrap; font-size: clamp(15px, 2.4vmax, 28px); line-height: 1; letter-spacing: .04em; color: #ffd9cf; -webkit-text-stroke: .24em var(--ink); paint-order: stroke fill; animation: touch-word 9s ease-in both; }
+.touch-zone.ka span { color: #d5f6fc; }
+@keyframes touch-word { 0%, 82% { opacity: .95; } 100% { opacity: 0; } }
 
 .pause { position: absolute; inset: 0; z-index: 10; display: grid; place-items: center; background: rgba(14, 6, 22, .72); animation: fade-in .15s; }
 .pause-panel { width: 760px; padding: 30px 36px 28px; border: 5px solid var(--ink); border-radius: 30px; background: var(--paper); color: var(--text); box-shadow: 0 0 0 5px #fff, 0 10px 0 5px var(--ink); text-align: center; animation: pop-in .2s ease-out; }
@@ -439,6 +429,11 @@ body:has(.play) { touch-action: none; }
 .results-mascot { position: absolute; left: calc(var(--ox) + 8px); bottom: calc(var(--foot) + 12px); animation: rise .4s .3s both; }
 .results-actions { position: absolute; right: calc(var(--ox) + 40px); bottom: calc(var(--foot) + 34px); display: flex; gap: 20px; animation: rise .35s .4s both; }
 .results-actions .button { width: 290px; justify-content: flex-start; }
+
+/* a device played with fingers has no use for the names of keys */
+@media (pointer: coarse) and (hover: none) {
+  .title-keys, .hints, .pause-hint { display: none; }
+}
 
 @media (prefers-reduced-motion: reduce) {
   .button.selected, .title-start, .title-logo, .banner, .shelf { animation: none; transition: none; }

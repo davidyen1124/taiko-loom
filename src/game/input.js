@@ -19,14 +19,11 @@ export function padForKey(event) {
   return KEYS[event.key.toLowerCase()] || null;
 }
 
-// A pointer with no drum on screen (a mouse, or the drum switched off): the
-// screen is the drum. Outer fifths are the rim, the middle is the face.
+// A finger or a mouse: the whole display is the drum, in four equal zones
+// from left to right. The outer two are the rim, the inner two the face, and
+// each half of the display is a hand. How high the touch lands does not matter.
 export function padForPoint(x, width) {
-  const ratio = x / width;
-  if (ratio < 0.2) return PADS[0];
-  if (ratio < 0.5) return PADS[1];
-  if (ratio < 0.8) return PADS[2];
-  return PADS[3];
+  return PADS[Math.min(3, Math.max(0, Math.floor((x / width) * 4)))];
 }
 
 // Menus are driven like the drum too: rim moves, face confirms.

@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { Backdrop } from '../ui/Backdrop.jsx';
+import { fingers } from '../ui/device.js';
 import { audio } from '../game/audio.js';
 import { padForKey } from '../game/input.js';
 
@@ -34,7 +35,7 @@ export function TitleScreen({ onStart }) {
       </div>
       <button className="title-start" onClick={begin} autoFocus>
         <strong>たたいてスタート</strong>
-        <span>Hit any drum key or tap to start</span>
+        <span>{fingers() ? 'Tap to start' : 'Hit any drum key or tap to start'}</span>
       </button>
       <ul className="title-keys" aria-label="Drum keys">
         <li className="ka"><kbd>D</kbd>カッ</li>

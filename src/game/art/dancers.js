@@ -4,13 +4,10 @@
 // docs/art); the figures drawn in code here stand in while the pictures load.
 import { CREAM, DON, INK, TAU, clamp, disc, easeBack, ellipse, line, path, sprite, stamp } from './draw.js';
 import { drawSprite, hasSprite } from './sprites.js';
-import { drumTopAt } from '../touchDrum.js';
 
 // One unit of the painted sheet is drawn this tall; the figures stand about
 // nine tenths of it.
 const TALL = 172;
-// Along the far edge of the touch drum, as shares of its half-width.
-const BEHIND = [-0.78, 0.78, -0.93, 0.93, -0.62];
 
 const SIZE = { width: 130, height: 150 };
 // Room around each figure for what sticks out of it: fans, tails, raised paws.
@@ -166,56 +163,39 @@ export function dancerSprite(id, scale) {
   });
 }
 
-// Where a dancer stands when the touch drum fills the middle of the scene:
-// behind it, feet hidden by its far edge, sized to fit under the lane.
-function behindDrum(index, drum, ground, ceiling) {
-  const x = drum.cx + BEHIND[index % BEHIND.length] * drum.rx;
-  const edge = drumTopAt(x, drum);
-  if (edge === null) return { x, floor: ground, size: 0.9 };
-  const size = clamp((Math.min(ground, edge + 22) - ceiling - 6) / 170, 0, 0.9);
-  if (size < 0.42) return null;
-  return { x, floor: Math.min(ground, edge + 24 * size), size };
-}
-
 /**
  * entered[id] is the moment each dancer hopped in, or undefined.
  * beat is a 0..1 phase inside the current beat, step counts beats.
  * centre is the middle of the stage; spread widens the line on wide stages.
- * drum is the touch drum in stage units, when it is on screen; ceiling is the
- * lowest row the lane covers.
  */
 export function drawDancers(c, scale, ground, {
-  time, beat, step, entered, gogo, size = 1, places = null, centre = 640, spread = 1, drum = null, ceiling = 0,
+  time, beat, step, entered, gogo, size = 1, places = null, centre = 640, spread = 1,
 }) {
   DANCERS.forEach((dancer, index) => {
     const since = entered[dancer.id];
     if (since === undefined) return;
     if (places && places[dancer.id] === undefined) return;
-    const spot = drum ? behindDrum(index, drum, ground, ceiling) : { x: places ? places[dancer.id] : centre + dancer.from * spread, floor: ground, size: 1 };
-    if (!spot) return;
+    const x = places ? places[dancer.id] : centre + dancer.from * spread;
     const arrive = easeBack(clamp((time - since) / 0.45));
     if (arrive <= 0) return;
-    const grown = size * spot.size;
-    const hop = Math.max(0, Math.sin(beat * Math.PI)) * (gogo ? 22 : 12) * spot.size;
+    const hop = Math.max(0, Math.sin(beat * Math.PI)) * (gogo ? 22 : 12);
     const side = (step + index) % 2 ? 1 : -1;
     const squash = 1 - 0.07 * Math.max(0, 1 - beat * 4);
     const pose = `${dancer.id}-${side > 0 ? 'b' : 'a'}`;
     const painted = hasSprite('friends', pose);
     c.save();
-    c.translate(spot.x, spot.floor);
-    if (!drum) {
-      c.globalAlpha = 0.25;
-      ellipse(c, 0, -4, Math.max(0, (46 - hop * 0.5) * grown * Math.min(1, arrive)), 9 * grown, INK);
-      c.globalAlpha = 1;
-    }
+    c.translate(x, ground);
+    c.globalAlpha = 0.25;
+    ellipse(c, 0, -4, Math.max(0, (46 - hop * 0.5) * size * Math.min(1, arrive)), 9 * size, INK);
+    c.globalAlpha = 1;
     c.translate(0, -hop + (1 - arrive) * 60);
     if (painted) {
       // the painted poses lean by themselves; the code only adds a sway
       c.rotate(side * (gogo ? 0.07 : 0.04) * Math.sin(beat * Math.PI));
-      drawSprite(c, 'friends', pose, 0, 2, TALL * grown * arrive, { stretchX: 2 - squash, stretchY: squash });
+      drawSprite(c, 'friends', pose, 0, 2, TALL * size * arrive, { stretchX: 2 - squash, stretchY: squash });
     } else {
       c.rotate(side * (gogo ? 0.16 : 0.1) * Math.sin(beat * Math.PI));
-      c.scale(grown * arrive * (2 - squash), grown * arrive * squash);
+      c.scale(size * arrive * (2 - squash), size * arrive * squash);
       stamp(c, dancerSprite(dancer.id, scale), -SIZE.width / 2 - PAD.side, -SIZE.height + 6 - PAD.top);
     }
     c.restore();

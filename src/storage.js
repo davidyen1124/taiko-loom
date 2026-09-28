@@ -10,7 +10,7 @@ export const DEFAULT_SETTINGS = {
   speed: 1,          // note scroll multiplier
   offset: 0,         // ms; positive accepts later hits (Bluetooth, TVs)
   auto: false,       // the game plays itself
-  guide: true,       // show the drum on touch screens
+  guide: true,       // colour the four zones on touch screens
 };
 
 export const LIMITS = {

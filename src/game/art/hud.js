@@ -7,7 +7,6 @@ import { DRUM, GAUGE, PANEL, STAGE } from '../layout.js';
 import { COMBO_SHOWN_FROM, LEVELS } from '../rules.js';
 import { plate } from './plates.js';
 import { drawSprite } from './sprites.js';
-import { SKIN } from '../touchDrum.js';
 
 // A difficulty emblem. Painted, it is a whole badge of radius r with its own
 // coloured centre; drawn, it is only the symbol, for a badge the caller supplies.
@@ -105,6 +104,9 @@ function panelBase(scale) {
     c.fillRect(0, 0, w, h);
   });
 }
+
+// the skin's share of the painted panel drum's width
+const SKIN = 0.69;
 
 function drumBase(scale) {
   const size = DRUM.radius * 2 + 20;
@@ -227,7 +229,7 @@ export function drawGauge(c, { value, clear, time, pulse = 0 }) {
   // frame: a low bar up to the clear line, then a tall tab to the right edge
   box(c, x - 8, bottom - height - 6, width + 16, height + 12, 8, INK);
   // runs off the end of the display, or stops short of a notch
-  box(c, splitX - 7, y - 6, STAGE.width - STAGE.left - STAGE.right - (splitX - 7) + 12, tall + 12, 10, INK);
+  box(c, splitX - 7, y - 6, (STAGE.width - STAGE.left - STAGE.right) / STAGE.band - (splitX - 7) + 12, tall + 12, 10, INK);
 
   for (let i = 0; i < segments; i++) {
     const past = i >= clearAt;

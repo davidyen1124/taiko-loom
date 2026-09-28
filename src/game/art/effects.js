@@ -4,7 +4,7 @@ import {
   DISPLAY, DON, FONT, GOLD, INK, KA, ROLL, TAU,
   box, clamp, disc, easeBack, easeOut, label, lerp, path, radial, ring, seeded, star,
 } from './draw.js';
-import { LANE, STAGE, TARGET } from '../layout.js';
+import { LANE, TARGET } from '../layout.js';
 
 const JUDGE = {
   good: { text: '良', fill: '#ffd23a', stroke: '#c8341e', glow: '#ffb03a' },
@@ -70,13 +70,22 @@ export class Effects {
     this.items = this.items.filter(item => now - item.at < item.life);
   }
 
-  // Effects that belong to the lane (drawn above the notes).
+  // Effects that belong to the lane (drawn above the notes, and kept inside it).
   drawLane(c, now) {
     for (const item of this.items) {
+      if (item.type === 'burst') drawBurst(c, item, clamp((now - item.at) / item.life));
+    }
+  }
+
+  // Effects over the lane that are free to leave it. `banner` is where a
+  // banner comes to rest.
+  drawOverLane(c, now, banner) {
+    for (const item of this.items) {
+      if (now < item.at) continue;
       const t = clamp((now - item.at) / item.life);
-      if (item.type === 'burst') drawBurst(c, item, t);
-      else if (item.type === 'judge') drawJudge(c, item, t);
-      else if (item.type === 'pop') drawPop(c, item, t);
+      if (item.type === 'judge') drawJudge(c, item, t);
+      else if (item.type === 'shatter') drawShatter(c, item, t);
+      else if (item.type === 'banner') drawBanner(c, item, t, banner);
     }
   }
 
@@ -87,13 +96,14 @@ export class Effects {
     }
   }
 
-  drawOverlay(c, now) {
+  // Effects in the sky band, in its units. `bubble` is where the mascot's
+  // speech bubble hangs.
+  drawBand(c, now, bubble) {
     for (const item of this.items) {
       if (now < item.at) continue;
       const t = clamp((now - item.at) / item.life);
-      if (item.type === 'callout') drawCallout(c, item, t);
-      else if (item.type === 'banner') drawBanner(c, item, t);
-      else if (item.type === 'shatter') drawShatter(c, item, t);
+      if (item.type === 'callout') drawCallout(c, item, t, bubble);
+      else if (item.type === 'pop') drawPop(c, item, t);
     }
   }
 }
@@ -220,12 +230,12 @@ function bubble(c, x, y, w, h, tailX, fill = '#fff') {
   c.restore();
 }
 
-function drawCallout(c, item, t) {
+function drawCallout(c, item, t, x) {
   const enter = easeBack(clamp(t * 5));
   const alpha = t > 0.85 ? 1 - (t - 0.85) / 0.15 : 1;
   c.save();
   c.globalAlpha = alpha;
-  c.translate(330, 84);
+  c.translate(x, 84);
   c.scale(enter, enter);
   c.rotate(-0.04);
   bubble(c, -88, -54, 236, 92, -40);
@@ -234,13 +244,12 @@ function drawCallout(c, item, t) {
   c.restore();
 }
 
-function drawBanner(c, item, t) {
+function drawBanner(c, item, t, rest) {
   const enter = easeOut(clamp(t * 4));
   const leave = t > 0.8 ? (t - 0.8) / 0.2 : 0;
   c.save();
   c.globalAlpha = 1 - leave;
-  // Banners cross the sky above the festival, where they cover no text.
-  c.translate(lerp(STAGE.width + 280, STAGE.width / 2 - STAGE.left, enter) - leave * 260, 360 + 58);
+  c.translate(lerp(rest.x * 2 + 280, rest.x, enter) - leave * 260, rest.y);
   c.transform(1, 0, -0.18, 1, 0, 0);
   box(c, -250, -30, 500, 60, 10, INK);
   box(c, -244, -24, 488, 48, 7, item.color);
@@ -314,9 +323,8 @@ export function drawTargetFire(c, time, strength) {
 }
 
 // Counter shown above the target while a drumroll or balloon is being played.
-export function drawCounter(c, kind, value, t, time) {
+export function drawCounter(c, kind, value, t, time, x = TARGET.x + 30) {
   const enter = easeBack(clamp(t * 6));
-  const x = TARGET.x + 30;
   const y = 92;
   c.save();
   c.translate(x, y);
