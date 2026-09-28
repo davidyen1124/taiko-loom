@@ -87,8 +87,9 @@ function drawLantern(c, x, y, w, h, color, glow = 1) {
   c.restore();
 }
 
-export function drawTopBand(c, scale, time, mood, blend, width, height) {
+export function drawTopBand(c, scale, time, mood, blend, width, height, size = 1) {
   // mood: night | clear | gogo; blend 0..1 fades from night to the mood
+  // size: how large the string of lanterns is drawn
   c.save();
   c.beginPath(); c.rect(0, 0, width, height); c.clip();
   drawWaves(c, scale, time, 'night', width, height);
@@ -100,7 +101,7 @@ export function drawTopBand(c, scale, time, mood, blend, width, height) {
   // soft vignette keeps the HUD readable
   c.fillStyle = vertical(c, 0, height, [[0, 'rgba(10,4,20,.45)'], [0.35, 'rgba(10,4,20,0)'], [1, 'rgba(10,4,20,.35)']]);
   c.fillRect(0, 0, width, height);
-  drawGarland(c, time, width);
+  drawGarland(c, time, width, size);
   c.restore();
 }
 

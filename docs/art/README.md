@@ -84,7 +84,7 @@ Two things learned the hard way:
 | Lantern, rice dumplings: two dance poses each | `sprites/friends` | `friends-2` | `prompts/friends-2.md` |
 | Don, ka, drumroll and balloon notes; the balloon | `sprites/notes` | `notes` | `prompts/notes.md` |
 | Difficulty emblems and crowns | `sprites/hud` | `icons` | `prompts/icons.md` |
-| The drum: in the panel, and under your fingers on a touch screen | `drum.webp` | `drum` | `prompts/drum.md` |
+| The drum in the player's panel | `drum.webp` | `drum` | `prompts/drum.md` |
 | Title screen | `title.webp` | `title-art` | `prompts/title-art.md` |
 | Festival behind the dancers, and on the results screen | `festival.webp` | `festival-backdrop` | `prompts/festival.md` |
 | Behind the menus | `menu.webp` | `menu-backdrop` | `prompts/menu.md` |
@@ -97,9 +97,9 @@ Atlases and pictures are in `public/art`; sheets and prompts are in `tools/art`.
   existing game, and nothing drawn to resemble one. Notes have a crest, never a face.
 - **No writing in a picture.** Stall signs, score stamps and every other word are
   set in code, so they stay sharp and can be translated.
-- **The drum is painted from straight above.** The touch drum tilts it by drawing it
-  wider than tall, which keeps the hit areas exact: the skin is 69% of the drum's
-  width, measured on the painting (`SKIN` in `src/game/touchDrum.js`).
+- **The drum is painted from straight above,** and drawn as a true circle. Its skin
+  is 69% of its width, measured on the painting (`SKIN` in `src/game/art/hud.js`), so
+  the halves that light up when it is played sit exactly on the skin and the rim.
 - **The festival keeps its layout.** Sign boards, lanterns, moon and plaza are
   measured on the picture (`src/game/art/scenery.js`). A new festival picture must
   be a repaint of the old one, or those measurements must be taken again.

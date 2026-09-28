@@ -32,8 +32,14 @@ start-up instructions when you can run it.
    A wider window adds columns, a taller one adds rows (`stageFor` and `setStage` in
    `src/game/layout.js`). Read sizes from `STAGE` at draw time, not at import time. In
    CSS, `--ox` and `--oy` say where the design grid begins and `--foot` is the curtain
-   under the festival. One exception: on a phone held sideways, while the touch drum
-   is out, the stage sits at the top and leaves a strip free under it (`reserveFor`).
+   under the festival. On a device played with fingers the play screen may be as
+   short as 560 rows, not 720, so that a phone draws the lane larger. The sky band is
+   then drawn smaller: `STAGE.band` is its size and `STAGE.rise` how far the lane and
+   the festival move up. The sky band is drawn in its own units (`inBand` in the
+   renderer); what is anchored to the lane but drawn in the band divides by
+   `STAGE.band`. A desktop window is never affected.
+   **The game is played sideways.** A phone or tablet held upright is asked to turn;
+   there is no upright layout to keep working.
 4. **Nothing may be cut off.** Outlined text that is also clipped needs padding equal
    to its outline (see the note at the top of `src/styles.css`). Canvas text that can
    be long uses `minSize` in `label()`, which shrinks and then shortens it; it is never
@@ -56,14 +62,15 @@ start-up instructions when you can run it.
 9. **Every picture has a stand-in.** Painted sprites and plates load after the first
    frame and may fail to load. Draw through `drawSprite`, which says whether it
    drew, and keep the code-drawn figure behind it.
-10. **The touch drum belongs to fingers.** It shows when the device's main pointer
-   is a finger, or once the screen has been touched, and never for a mouse. Every
-   touch plays something: the skin is don, everything else is ka. Its geometry lives
-   in `src/game/touchDrum.js` and is tested; the painted skin is 69% of the drum.
-   **The head of the drum never reaches the bottom edge.** A phone keeps a strip
-   there for its own gestures (`env(safe-area-inset-bottom)`, read by
-   `src/ui/safeArea.js`); the head ends at least 16 px above it. The HUD likewise
-   keeps clear of a notch at either end (`STAGE.left`, `STAGE.right`).
+10. **On a touch screen the whole display is the drum.** Four equal zones from left
+   to right: ka, don, don, ka (`padForPoint` in `src/game/input.js`). Every touch
+   plays something, at any height; only buttons are left alone. The zones are
+   coloured for fingers only: when the device's main pointer is a finger, or once the
+   screen has been touched, and never for a mouse. **They are only light.** Their
+   colour stays under the lane and never over the notes or the HUD, and there is no
+   picture of a drum to tap. The words in them sit above the strip a phone keeps for
+   its own gestures (`env(safe-area-inset-bottom)`, read by `src/ui/safeArea.js`).
+   The HUD keeps clear of a notch at either end (`STAGE.left`, `STAGE.right`).
 11. **Built-in songs are synthesised in plain JavaScript,** not with the Web Audio
    graph, which took 10 to 28 seconds a song in Chrome and Safari. `npm test` renders
    every song and checks its level, its tuning and that it is in time with its chart.

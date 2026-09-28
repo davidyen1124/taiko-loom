@@ -9,10 +9,10 @@ import { menuAction, padForKey, padForPoint } from '../game/input.js';
 import { FRAME, STAGE } from '../game/layout.js';
 import { Renderer } from '../game/renderer.js';
 import { crownFor, isBig, rankFor } from '../game/rules.js';
-import { drumLayout, padAt } from '../game/touchDrum.js';
+import { fingers } from '../ui/device.js';
 import { safeArea } from '../ui/safeArea.js';
 import { useStage } from '../ui/Stage.jsx';
-import { TouchDrum } from '../ui/TouchDrum.jsx';
+import { TouchZones } from '../ui/TouchZones.jsx';
 import { loadFonts } from '../fonts.js';
 
 const PAUSE_OPTIONS = [
@@ -30,21 +30,20 @@ export function PlayScreen({ song, buffer, difficulty, settings, session, onFini
   const live = useRef({ paused: false, choice: 0 });
   live.current.paused = paused;
   live.current.choice = choice;
-  // The drum is for fingers. It shows on devices whose main pointer is a
-  // finger, and on any other device from the moment its screen is touched.
-  const [touch, setTouch] = useState(() => typeof window !== 'undefined' && window.matchMedia('(pointer: coarse)').matches);
-  const [drum, setDrum] = useState(null);
+  // The touch zones are for fingers. They show on devices whose main pointer is
+  // a finger, and on any other device from the moment its screen is touched.
+  const [touch, setTouch] = useState(fingers);
+  const [zones, setZones] = useState(null);
   const pads = useRef();
   const stage = useStage();
   const shown = touch && settings.guide;
-  live.current.drum = shown ? drum : null;
 
-  // While the drum is out the stage makes room for it underneath.
-  const { dock } = stage;
+  // On a phone the stage is laid out for this screen: see game/layout.js.
+  const { play } = stage;
   useEffect(() => {
-    dock(shown);
-    return () => dock(false);
-  }, [dock, shown]);
+    play(true);
+    return () => play(false);
+  }, [play]);
 
   // one run of the song, restarted whenever `run` changes
   useEffect(() => {
@@ -57,7 +56,6 @@ export function PlayScreen({ song, buffer, difficulty, settings, session, onFini
     // development only: lets QA step the game frame by frame (see docs/qa.md)
     if (import.meta.env.DEV) window.__taiko = { renderer, game, audio };
     renderer.start(game, song, { speed: settings.speed });
-    renderer.drum = live.current.behind || null;
     audio.setVolumes({ music: settings.music, sfx: settings.sfx });
     audio.load(buffer);
     setPaused(false);
@@ -194,42 +192,35 @@ export function PlayScreen({ song, buffer, difficulty, settings, session, onFini
     };
   }, [choose, pause, strike]);
 
-  // Where the drum sits, in the window and on the stage. The festival friends
-  // need the second one: they line up behind the drum.
+  // Turned upright in the middle of a song, the game waits.
+  useEffect(() => {
+    if (stage.upright) pause();
+  }, [stage.upright, pause]);
+
+  // Where the colour of the zones begins, under the lane, and the strip along
+  // the bottom that the device keeps for itself.
   useEffect(() => {
     const place = () => {
       const box = canvas.current?.getBoundingClientRect();
       if (!box || !box.width) return;
-      const upright = window.innerHeight > window.innerWidth;
       const row = box.height / STAGE.height;
-      const next = drumLayout(window.innerWidth, window.innerHeight, {
-        upright, stageBottom: box.bottom, inset: safeArea(),
-        laneBottom: box.top + (FRAME.y + FRAME.height + STAGE.top) * row,
-      });
-      const unit = STAGE.width / box.width;
-      const behind = shown && !upright
-        ? { cx: (next.cx - box.left) * unit, cy: (next.cy - box.top) * unit, rx: next.rx * unit, ry: next.ry * unit }
-        : null;
-      live.current.behind = behind;
-      if (state.current.renderer) state.current.renderer.drum = behind;
-      setDrum({ ...next, upright });
+      setZones({ top: box.top + (FRAME.y + FRAME.height + STAGE.top - STAGE.rise) * row, foot: safeArea().bottom });
     };
     place();
     const observer = new ResizeObserver(place);
     observer.observe(canvas.current);
     window.addEventListener('resize', place);
     return () => { observer.disconnect(); window.removeEventListener('resize', place); };
-  }, [shown, stage.width, stage.height, stage.scale, stage.docked]);
+  }, [stage.width, stage.height, stage.scale]);
 
-  // The whole display listens, not just the stage or the picture of the drum.
+  // The whole display listens, not just the stage.
   useEffect(() => {
     const down = event => {
       if (event.pointerType === 'mouse' && event.button !== 0) return;
       if (live.current.paused || event.target.closest?.('button, .pause, .dialog-shade, .rotate-hint')) return;
       event.preventDefault();
       if (event.pointerType !== 'mouse') setTouch(true);
-      const on = live.current.drum;
-      strike(on ? padAt(event.clientX, event.clientY, on) : padForPoint(event.clientX, window.innerWidth), event.timeStamp);
+      strike(padForPoint(event.clientX, window.innerWidth), event.timeStamp);
     };
     window.addEventListener('pointerdown', down, { passive: false });
     return () => window.removeEventListener('pointerdown', down);
@@ -239,7 +230,7 @@ export function PlayScreen({ song, buffer, difficulty, settings, session, onFini
     <section className="play" aria-label={`Playing ${song.title}`}>
       <canvas ref={canvas} className="play-canvas" aria-label="Notes scroll from right to left. Hit them when they reach the circle." />
       <button className="play-pause" aria-label="Pause" onClick={pause}><Pause size={26} fill="currentColor" strokeWidth={0} /></button>
-      {shown && drum && !paused && createPortal(<TouchDrum ref={pads} drum={drum} upright={drum.upright} />, document.body)}
+      {shown && zones && !paused && !stage.upright && createPortal(<TouchZones ref={pads} top={zones.top} foot={zones.foot} />, document.body)}
       {paused && (
         <div className="pause" role="dialog" aria-modal="true" aria-label="Paused">
           <div className="pause-panel">

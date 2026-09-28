@@ -52,7 +52,6 @@ export class Renderer {
     this.context = canvas.getContext('2d', { alpha: false });
     this.effects = new Effects();
     this.scale = 1;
-    this.drum = null;           // the touch drum in stage units, while it is on screen
     this.resize();
   }
 
@@ -171,7 +170,7 @@ export class Renderer {
           if (event.note.type === 'balloon') {
             this.counter = null;
             if (event.popped) {
-              effects.pop(now, TARGET.x + 30, 96);
+              effects.pop(now, (TARGET.x + 30) / STAGE.band, 96);
               effects.burst(now, 'good', true, 'don');
               effects.fly(now, 'bigDon');
               this.setMood('happy', now, 1);
@@ -241,9 +240,10 @@ export class Renderer {
       if (!here && stats.gauge < dancer.joins - 4) delete this.entered[dancer.id];
     }
 
-    // Rows added above the design grid push the HUD, lane and scene down.
-    const { width, height, top, foot } = STAGE;
-    const sceneTop = SCENE_Y + top;
+    // Rows added above the design grid push the HUD, lane and scene down. A
+    // sky band drawn smaller (see layout.js) lets the lane and the scene rise.
+    const { width, height, top, foot, left, band, rise } = STAGE;
+    const sceneTop = SCENE_Y + top - rise;
     const sceneHeight = height - foot - sceneTop;
 
     // ---- bottom: the festival ------------------------------------------
@@ -260,63 +260,70 @@ export class Renderer {
     drawDancers(c, scale, height - foot - 22, {
       time: now, beat: phase, step, entered: this.entered, gogo,
       centre: width / 2, spread: Math.min(1.3, width / SAFE.width),
-      drum: this.drum, ceiling: FRAME.y + FRAME.height + top,
     });
 
     // ---- top band --------------------------------------------------------
+    // Two sets of units from here on. The sky band is drawn in its own, which
+    // shrink with it; the lane keeps stage units.
+    const inBand = draw => { c.save(); c.translate(left, top); c.scale(band, band); draw(); c.restore(); };
+    const inLane = draw => { c.save(); c.translate(left, top - rise); draw(); c.restore(); };
     const mood = this.gogo > 0 ? 'gogo' : 'clear';
-    drawTopBand(c, scale, now, mood, Math.max(this.gogo, this.cleared), width, TOP_HEIGHT + top);
-    c.save();
-    c.translate(0, top);
-    c.fillStyle = '#0d090c';
-    c.fillRect(0, FRAME.y, width, FRAME.height);
-    // The HUD keeps clear of a notch: it is drawn from the first free column.
-    c.translate(STAGE.left, 0);
-    drawGauge(c, { value: stats.gauge, clear: rule.clear, time: now, pulse: 1 - (now - this.gaugeAt) / 0.25 });
-
-    // ---- frame, panel, lane ---------------------------------------------
-    const swing = at => clamp(1 - (now - at) / 0.16);
-    drawPanel(c, scale, {
-      difficulty: game.difficulty,
-      score: stats.score,
-      combo: stats.combo,
-      comboPop: 1 - (now - this.comboAt) / 0.12,
-      flashes: {
-        leftDon: 1 - (now - this.press.leftDon) / FLASH,
-        rightDon: 1 - (now - this.press.rightDon) / FLASH,
-        leftKa: 1 - (now - this.press.leftKa) / FLASH,
-        rightKa: 1 - (now - this.press.rightKa) / FLASH,
-      },
-      punch: clamp(1 - (now - this.punchAt) / 0.1),
+    drawTopBand(c, scale, now, mood, Math.max(this.gogo, this.cleared), width, TOP_HEIGHT * band + top, band);
+    inLane(() => {
+      c.fillStyle = '#0d090c';
+      c.fillRect(-left, FRAME.y, width, FRAME.height);
     });
-    this.drawLane(c, time, current, now);
-    this.drawTitle(c);          // after the lane, so notes flying to the gauge pass behind it
+    // the gauge stands on the frame, and notes on their way to it pass in front
+    inBand(() => drawGauge(c, { value: stats.gauge, clear: rule.clear, time: now, pulse: 1 - (now - this.gaugeAt) / 0.25 }));
 
-    // ---- mascot and overlays --------------------------------------------
+    // ---- panel and lane ---------------------------------------------------
+    // The HUD keeps clear of a notch: it is drawn from the first free column.
+    const swing = at => clamp(1 - (now - at) / 0.16);
+    inLane(() => {
+      drawPanel(c, scale, {
+        difficulty: game.difficulty,
+        score: stats.score,
+        combo: stats.combo,
+        comboPop: 1 - (now - this.comboAt) / 0.12,
+        flashes: {
+          leftDon: 1 - (now - this.press.leftDon) / FLASH,
+          rightDon: 1 - (now - this.press.rightDon) / FLASH,
+          leftKa: 1 - (now - this.press.leftKa) / FLASH,
+          rightKa: 1 - (now - this.press.rightKa) / FLASH,
+        },
+        punch: clamp(1 - (now - this.punchAt) / 0.1),
+      });
+      this.drawLane(c, time, current, now);
+    });
+
+    // ---- title, mascot and overlays -------------------------------------
     const name = now < this.mood.until ? this.mood.name
       : this.counter?.kind === 'balloon' ? 'balloon'
         : gogo ? 'gogo' : 'idle';
     const jump = Math.sin(clamp((now - this.jumpAt) / 0.5) * Math.PI) * MASCOT.jump;
-    drawMascot(c, MASCOT.x, MASCOT.y, MASCOT.size, {
-      bob: Math.max(0, 1 - phase * 2.6),
-      left: swing(this.arms.left),
-      right: swing(this.arms.right),
-      kinds: this.kinds,
-      mood: name,
-      blink: (now % 3.7) < 0.12,
-      jump: now - this.jumpAt < 0.5 ? jump : 0,
-      leap: now - this.jumpAt < 0.5,
-      beats: current,
-      time: now,
+    inBand(() => {
+      this.drawTitle(c);        // after the lane, so notes flying to the gauge pass behind it
+      drawMascot(c, MASCOT.x, MASCOT.y, MASCOT.size, {
+        bob: Math.max(0, 1 - phase * 2.6),
+        left: swing(this.arms.left),
+        right: swing(this.arms.right),
+        kinds: this.kinds,
+        mood: name,
+        blink: (now % 3.7) < 0.12,
+        jump: now - this.jumpAt < 0.5 ? jump : 0,
+        leap: now - this.jumpAt < 0.5,
+        beats: current,
+        time: now,
+      });
+      if (this.counter && now < this.counter.until) {
+        drawCounter(c, this.counter.kind, this.counter.value, now - this.counter.shownAt, now, (TARGET.x + 30) / band);
+      } else if (this.counter && now >= this.counter.until) {
+        this.counter = null;
+      }
+      effects.drawBand(c, now, MASCOT.x + 174);
     });
-
-    if (this.counter && now < this.counter.until) {
-      drawCounter(c, this.counter.kind, this.counter.value, now - this.counter.shownAt, now);
-    } else if (this.counter && now >= this.counter.until) {
-      this.counter = null;
-    }
-    effects.drawOverlay(c, now);
-    c.restore();
+    // Banners cross the sky above the festival, where they cover no text.
+    inLane(() => effects.drawOverLane(c, now, { x: width / 2 - left, y: SCENE_Y + 58 }));
     if (game.auto) {
       box(c, width / 2 - 80, 8, 160, 30, 15, INK);
       label(c, 'オート  AUTO', width / 2, 24, { size: 15, align: 'center', baseline: 'middle', fill: '#ffe36a', stroke: null, width: 0, weight: 900, spacing: 1.5 });
@@ -424,16 +431,20 @@ export class Renderer {
     this.effects.drawLane(c, now);
     c.restore();
 
-    // notes that were hit leave the lane, so their flight is drawn unclipped
+    // Notes that were hit leave the lane for the soul orb, so their flight is
+    // drawn unclipped. The orb is in the sky band: this is where it is from here.
+    const { band, rise } = STAGE;
+    const orb = { x: GAUGE.orbX * band, y: GAUGE.orbY * band + rise };
+    const above = STAGE.top - rise;
     c.save();
-    c.beginPath(); c.rect(0, -STAGE.top, STAGE.width, STAGE.top + LANE.y + LANE.height); c.clip();
+    c.beginPath(); c.rect(-STAGE.left, -above, STAGE.width, above + LANE.y + LANE.height); c.clip();
     for (const item of this.effects.items) {
       if (item.type !== 'fly') continue;
       const t = clamp((now - item.at) / item.life);
       const p = easeOut(t) * 0.35 + t * 0.65;
-      const x = lerp(TARGET.x, GAUGE.orbX, p);
-      const y = lerp(TARGET.y, GAUGE.orbY, p) - Math.sin(p * Math.PI) * 190;
-      drawNote(c, item.noteType, x, y, scale, t > 0.85 ? 1 - (t - 0.85) / 0.15 : 1, lerp(1, 0.5, p));
+      const x = lerp(TARGET.x, orb.x, p);
+      const y = lerp(TARGET.y, orb.y, p) - Math.sin(p * Math.PI) * 190 * band;
+      drawNote(c, item.noteType, x, y, scale, t > 0.85 ? 1 - (t - 0.85) / 0.15 : 1, lerp(1, 0.5 * band, p));
     }
     c.restore();
   }

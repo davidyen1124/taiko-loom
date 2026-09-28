@@ -12,7 +12,9 @@ import { SAFE, STAGE } from '../game/layout.js';
 const everyone = Object.fromEntries(DANCERS.map(d => [d.id, -10]));
 // on the results screen the crowd gathers between the mascot and the buttons
 const RESULT_PLACES = { fox: 372, daruma: 472, cat: 568 };
-const TITLE_ART = { width: 1672, height: 941 };
+// `head` is the highest row of the band shown in a wide window, as a share of
+// the picture: just above the leaf on Yoru's head.
+const TITLE_ART = { width: 1672, height: 941, head: 0.265 };
 const sparks = new Effects();
 
 export function Backdrop({ variant = 'select', mood = 'happy', bpm = 120 }) {
@@ -28,8 +30,9 @@ export function Backdrop({ variant = 'select', mood = 'happy', bpm = 120 }) {
       const w = TITLE_ART.width * zoom;
       const h = TITLE_ART.height * zoom;
       const tall = h < height;
-      // A wide window shows a band of the picture: the band that holds all of Yoru.
-      const y = tall ? 0 : (height - h) * 0.92;
+      // A wide window shows a band of the picture: the band that holds all of
+      // Yoru, or on a phone, too wide for that, all but the feet.
+      const y = tall ? 0 : Math.max((height - h) * 0.92, -h * TITLE_ART.head);
       const x = (width - w) * 0.62;
       if (tall) {
         // the ground carries on below the picture: its last rows, drawn out
