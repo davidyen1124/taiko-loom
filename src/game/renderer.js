@@ -52,6 +52,7 @@ export class Renderer {
     this.context = canvas.getContext('2d', { alpha: false });
     this.effects = new Effects();
     this.scale = 1;
+    this.drum = null;           // the touch drum in stage units, while it is on screen
     this.resize();
   }
 
@@ -90,6 +91,7 @@ export class Renderer {
     this.gaugeAt = -9;
     this.punchAt = -9;
     this.arms = { left: -9, right: -9 };
+    this.kinds = { left: 'don', right: 'don' };
     this.mood = { name: 'idle', until: 0 };
     this.jumpAt = -9;
     this.gogo = 0;
@@ -110,6 +112,7 @@ export class Renderer {
     this.press[`${hand}${kind === 'ka' ? 'Ka' : 'Don'}`] = now;
     this.lane = { at: now, kind, hit: false };
     this.arms[hand] = now;
+    this.kinds[hand] = kind;
     this.punchAt = now;
   }
 
@@ -135,7 +138,7 @@ export class Renderer {
           break;
         case 'miss':
           effects.judge(now, 'bad');
-          this.setMood('sad', now, 0.7);
+          this.setMood('oops', now, 0.7);
           this.gaugeAt = now;
           break;
         case 'comboBreak':
@@ -257,6 +260,7 @@ export class Renderer {
     drawDancers(c, scale, height - foot - 22, {
       time: now, beat: phase, step, entered: this.entered, gogo,
       centre: width / 2, spread: Math.min(1.3, width / SAFE.width),
+      drum: this.drum, ceiling: FRAME.y + FRAME.height + top,
     });
 
     // ---- top band --------------------------------------------------------
@@ -295,9 +299,12 @@ export class Renderer {
       bob: Math.max(0, 1 - phase * 2.6),
       left: swing(this.arms.left),
       right: swing(this.arms.right),
+      kinds: this.kinds,
       mood: name,
       blink: (now % 3.7) < 0.12,
       jump: now - this.jumpAt < 0.5 ? jump : 0,
+      leap: now - this.jumpAt < 0.5,
+      beats: current,
       time: now,
     });
 

@@ -1,9 +1,11 @@
-// Note artwork. Notes are drawn as little drum heads seen from above:
-// a cream skin rim around a lacquered face with a painted swirl.
+// Note artwork. Notes are little drum heads seen from above: a cream skin
+// rim around a lacquered face with a swirl crest. They are painted (see
+// docs/art); the ones drawn in code here stand in while the pictures load.
 import {
   BALLOON, CREAM, CREAM_SHADE, DON, DON_DARK, DON_LIGHT, INK, KA, KA_DARK, KA_LIGHT, ROLL, ROLL_DARK, ROLL_LIGHT,
-  TAU, disc, ring, sprite, stamp,
+  TAU, disc, ring, sprite, stamp, vertical,
 } from './draw.js';
+import { drawSprite, hasSprite } from './sprites.js';
 
 export const SMALL = 34;
 export const BIG = 51;
@@ -61,10 +63,16 @@ function paintHead(c, x, y, r, face) {
   c.restore();
 }
 
+// Each note is scaled once to the size it is shown at and kept, so a lane
+// full of notes costs no more than copying small pictures.
 export function noteSprite(type, scale) {
   const r = radiusOf(type);
   const size = r * 2 + 8;
-  return sprite(`note-${type}`, size, size, scale, c => paintHead(c, size / 2, size / 2, r, faceOf(type)));
+  const face = faceOf(type);
+  const painted = hasSprite('notes', face);
+  return sprite(`note-${type}-${painted ? 'painted' : 'drawn'}`, size, size, scale, c => {
+    if (!painted || !drawSprite(c, 'notes', face, size / 2, size / 2, r * 2)) paintHead(c, size / 2, size / 2, r, face);
+  });
 }
 
 export function drawNote(c, type, x, y, scale, alpha = 1, zoom = 1) {
@@ -75,33 +83,71 @@ export function drawNote(c, type, x, y, scale, alpha = 1, zoom = 1) {
   if (alpha !== 1) c.globalAlpha = 1;
 }
 
+// The band of a drumroll, painted to match the roll note: dark outline, cream
+// rim, golden face. Proportions and colours are measured from the note.
+function paintedBand(c, x, tail, y, r) {
+  const layers = [
+    [r, INK],
+    [r * 0.93, vertical(c, y - r, y + r, [[0, '#fffaec'], [0.6, '#fdeecc'], [1, '#e2c49a']])],
+    [r * 0.765, INK],
+    [r * 0.74, vertical(c, y - r * 0.74, y + r * 0.74, [[0, '#ffdf3c'], [0.45, '#fecb0b'], [1, '#f8a400']])],
+  ];
+  c.lineCap = 'round';
+  for (const [half, paint] of layers) {
+    c.strokeStyle = paint;
+    c.lineWidth = half * 2;
+    c.beginPath(); c.moveTo(x, y); c.lineTo(tail, y); c.stroke();
+  }
+  // gloss along the top of the face
+  c.strokeStyle = 'rgba(255, 246, 190, .8)';
+  c.lineWidth = Math.max(2.5, r * 0.11);
+  c.beginPath(); c.moveTo(x + r * 0.9, y - r * 0.5); c.lineTo(Math.max(x + r * 0.9, tail - r * 0.1), y - r * 0.5); c.stroke();
+}
+
 // A drumroll: head, a long band, and a rounded tail.
 export function drawRoll(c, type, x, endX, y, scale) {
   const r = radiusOf(type);
-  const band = r - 3;
-  const [base, dark, light] = FACES.roll;
   const tail = Math.max(endX, x);
   c.save();
-  c.lineCap = 'round';
-  c.strokeStyle = INK;
-  c.lineWidth = band * 2 + 6;
-  c.beginPath(); c.moveTo(x, y); c.lineTo(tail, y); c.stroke();
-  c.strokeStyle = dark;
-  c.lineWidth = band * 2;
-  c.beginPath(); c.moveTo(x, y); c.lineTo(tail, y); c.stroke();
-  c.strokeStyle = base;
-  c.lineWidth = band * 2 - 8;
-  c.beginPath(); c.moveTo(x, y - 3); c.lineTo(tail, y - 3); c.stroke();
-  c.strokeStyle = light;
-  c.lineWidth = Math.max(3, band * 0.2);
-  c.globalAlpha = 0.85;
-  c.beginPath(); c.moveTo(x + r, y - band * 0.55); c.lineTo(Math.max(x + r, tail - 4), y - band * 0.55); c.stroke();
+  if (hasSprite('notes', 'roll')) {
+    paintedBand(c, x, tail, y, r);
+  } else {
+    const band = r - 3;
+    const [base, dark, light] = FACES.roll;
+    c.lineCap = 'round';
+    c.strokeStyle = INK;
+    c.lineWidth = band * 2 + 6;
+    c.beginPath(); c.moveTo(x, y); c.lineTo(tail, y); c.stroke();
+    c.strokeStyle = dark;
+    c.lineWidth = band * 2;
+    c.beginPath(); c.moveTo(x, y); c.lineTo(tail, y); c.stroke();
+    c.strokeStyle = base;
+    c.lineWidth = band * 2 - 8;
+    c.beginPath(); c.moveTo(x, y - 3); c.lineTo(tail, y - 3); c.stroke();
+    c.strokeStyle = light;
+    c.lineWidth = Math.max(3, band * 0.2);
+    c.globalAlpha = 0.85;
+    c.beginPath(); c.moveTo(x + r, y - band * 0.55); c.lineTo(Math.max(x + r, tail - 4), y - band * 0.55); c.stroke();
+  }
   c.restore();
   drawNote(c, type, x, y, scale);
 }
 
-// A balloon note: a drum head towing a paper balloon.
+// A balloon note: a drum head towing a balloon.
 export function drawBalloon(c, x, y, scale, puff = 0) {
+  const grow = 1 + puff * 0.25;
+  if (hasSprite('notes', 'float')) {
+    // the painted balloon hangs knot down; turned a quarter it trails the note
+    const wide = 70 * grow;
+    const entry = sprite(`balloon-painted-${Math.round(grow * 20)}`, wide * 1.6, wide * 1.6, scale, (b, w, h) => {
+      b.translate(w / 2, h / 2);
+      b.rotate(Math.PI / 2);
+      drawSprite(b, 'notes', 'float', 0, 0, wide);
+    });
+    stamp(c, entry, x + SMALL - 12 + wide * 0.78 - entry.width / 2, y - entry.height / 2);
+    drawNote(c, 'balloon', x, y, scale);
+    return;
+  }
   const entry = sprite('balloon-tail', 120, 80, scale, (b, w, h) => {
     const cy = h / 2;
     b.lineCap = 'round';
@@ -122,7 +168,6 @@ export function drawBalloon(c, x, y, scale, puff = 0) {
     b.strokeStyle = '#fff'; b.lineWidth = 4; b.globalAlpha = 0.85;
     b.beginPath(); b.ellipse(72, cy, 32, 23, 0, Math.PI * 1.1, Math.PI * 1.45); b.stroke();
   });
-  const grow = 1 + puff * 0.25;
   stamp(c, entry, x + SMALL - 6, y - (entry.height * grow) / 2, entry.width * grow, entry.height * grow);
   drawNote(c, 'balloon', x, y, scale);
 }

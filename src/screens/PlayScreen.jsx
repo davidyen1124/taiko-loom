@@ -5,9 +5,12 @@ import { createPortal } from 'react-dom';
 import { Pause, Play, RotateCcw, ListMusic } from 'lucide-react';
 import { audio } from '../game/audio.js';
 import { Game } from '../game/engine.js';
-import { menuAction, padForKey, padForPoint, PADS } from '../game/input.js';
+import { menuAction, padForKey, padForPoint } from '../game/input.js';
+import { STAGE } from '../game/layout.js';
 import { Renderer } from '../game/renderer.js';
 import { crownFor, isBig, rankFor } from '../game/rules.js';
+import { drumLayout, padAt } from '../game/touchDrum.js';
+import { TouchDrum } from '../ui/TouchDrum.jsx';
 import { loadFonts } from '../fonts.js';
 
 const PAUSE_OPTIONS = [
@@ -25,7 +28,13 @@ export function PlayScreen({ song, buffer, difficulty, settings, session, onFini
   const live = useRef({ paused: false, choice: 0 });
   live.current.paused = paused;
   live.current.choice = choice;
-  const touch = typeof window !== 'undefined' && window.matchMedia('(pointer: coarse)').matches;
+  // The drum is for fingers. It shows on devices whose main pointer is a
+  // finger, and on any other device from the moment its screen is touched.
+  const [touch, setTouch] = useState(() => typeof window !== 'undefined' && window.matchMedia('(pointer: coarse)').matches);
+  const [drum, setDrum] = useState(null);
+  const pads = useRef();
+  const shown = touch && settings.guide;
+  live.current.drum = shown ? drum : null;
 
   // one run of the song, restarted whenever `run` changes
   useEffect(() => {
@@ -38,6 +47,7 @@ export function PlayScreen({ song, buffer, difficulty, settings, session, onFini
     // development only: lets QA step the game frame by frame (see docs/qa.md)
     if (import.meta.env.DEV) window.__taiko = { renderer, game, audio };
     renderer.start(game, song, { speed: settings.speed });
+    renderer.drum = live.current.behind || null;
     audio.setVolumes({ music: settings.music, sfx: settings.sfx });
     audio.load(buffer);
     setPaused(false);
@@ -54,8 +64,11 @@ export function PlayScreen({ song, buffer, difficulty, settings, session, onFini
         game.update(time);
         const events = game.drain();
         for (const event of events) {
-          if (event.type === 'auto') (event.kind === 'ka' ? audio.ka(event.big) : audio.don(event.big));
-          else if (event.type === 'milestone') audio.jingle('milestone');
+          if (event.type === 'auto') {
+            if (event.kind === 'ka') audio.ka(event.big); else audio.don(event.big);
+            pads.current?.flash(event);
+            if (event.big) pads.current?.flash({ kind: event.kind, hand: event.hand === 'left' ? 'right' : 'left' });
+          } else if (event.type === 'milestone') audio.jingle('milestone');
           else if (event.type === 'gogo' && event.on) audio.jingle('gogo');
           else if (event.type === 'holdEnd' && event.popped) audio.pop();
           else if (event.type === 'finish' && !state.current.done) {
@@ -99,6 +112,7 @@ export function PlayScreen({ song, buffer, difficulty, settings, session, onFini
     const big = Boolean(next && isBig(next) && Math.abs(next.time - at) < game.windows.ok);
     if (pad.kind === 'ka') audio.ka(big); else audio.don(big);
     renderer.strike(pad.kind, pad.hand, now / 1000);
+    pads.current?.flash(pad);
     if (game.auto) return;
     // bring the rules up to this instant first, so judging never depends on
     // how recently a frame was drawn
@@ -170,40 +184,48 @@ export function PlayScreen({ song, buffer, difficulty, settings, session, onFini
     };
   }, [choose, pause, strike]);
 
-  // On touch screens the whole display is the drum, not just the stage.
-  const [zone, setZone] = useState(null);
+  // Where the drum sits, in the window and on the stage. The festival friends
+  // need the second one: they line up behind the drum.
   useEffect(() => {
     const place = () => {
       const box = canvas.current?.getBoundingClientRect();
-      if (!box) return;
+      if (!box || !box.width) return;
       const upright = window.innerHeight > window.innerWidth;
-      setZone({ top: Math.round(upright ? box.bottom : box.top + box.height * 0.5) });
+      const next = drumLayout(window.innerWidth, window.innerHeight, { upright, stageBottom: box.bottom });
+      const unit = STAGE.width / box.width;
+      const behind = shown && !upright
+        ? { cx: (next.cx - box.left) * unit, cy: (next.cy - box.top) * unit, rx: next.rx * unit, ry: next.ry * unit }
+        : null;
+      live.current.behind = behind;
+      if (state.current.renderer) state.current.renderer.drum = behind;
+      setDrum(next);
     };
     place();
+    const observer = new ResizeObserver(place);
+    observer.observe(canvas.current);
     window.addEventListener('resize', place);
+    return () => { observer.disconnect(); window.removeEventListener('resize', place); };
+  }, [shown]);
+
+  // The whole display listens, not just the stage or the picture of the drum.
+  useEffect(() => {
     const down = event => {
       if (event.pointerType === 'mouse' && event.button !== 0) return;
       if (live.current.paused || event.target.closest?.('button, .pause, .dialog-shade, .rotate-hint')) return;
       event.preventDefault();
-      strike(padForPoint(event.clientX, window.innerWidth), event.timeStamp);
+      if (event.pointerType !== 'mouse') setTouch(true);
+      const on = live.current.drum;
+      strike(on ? padAt(event.clientX, event.clientY, on) : padForPoint(event.clientX, window.innerWidth), event.timeStamp);
     };
     window.addEventListener('pointerdown', down, { passive: false });
-    return () => {
-      window.removeEventListener('resize', place);
-      window.removeEventListener('pointerdown', down);
-    };
+    return () => window.removeEventListener('pointerdown', down);
   }, [strike]);
 
   return (
     <section className="play" aria-label={`Playing ${song.title}`}>
       <canvas ref={canvas} className="play-canvas" aria-label="Notes scroll from right to left. Hit them when they reach the circle." />
       <button className="play-pause" aria-label="Pause" onClick={pause}><Pause size={26} fill="currentColor" strokeWidth={0} /></button>
-      {touch && settings.guide && !paused && zone && createPortal(
-        <div className="touch-guide" aria-hidden="true" style={{ top: zone.top }}>
-          {PADS.map(pad => <span key={pad.key} className={`touch-zone ${pad.kind}`}>{pad.kind === 'ka' ? 'カッ' : 'ドン'}</span>)}
-        </div>,
-        document.body,
-      )}
+      {shown && drum && !paused && createPortal(<TouchDrum ref={pads} drum={drum} height={window.innerHeight} />, document.body)}
       {paused && (
         <div className="pause" role="dialog" aria-modal="true" aria-label="Paused">
           <div className="pause-panel">

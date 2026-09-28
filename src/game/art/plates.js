@@ -3,7 +3,7 @@
 // Addresses follow the build's base, so the game also runs from a sub-folder
 // such as a GitHub Pages project site.
 const BASE = import.meta.env?.BASE_URL ?? '/';
-const SOURCES = { festival: `${BASE}art/festival.webp`, title: `${BASE}art/title.webp` };
+const SOURCES = { festival: `${BASE}art/festival.webp`, title: `${BASE}art/title.webp`, drum: `${BASE}art/drum.webp`, menu: `${BASE}art/menu.webp` };
 const images = {};
 let loading = null;
 

@@ -10,7 +10,7 @@
     "build:pages": "VITE_BACKEND=off vite build --outDir dist/pages",
     "preview": "vite preview",
     "preview:pages": "vite preview --outDir dist/pages --base /taiko-nights/ --port 4174 --strictPort",
-    "test": "node --test tests/engine.test.mjs tests/analyze.test.mjs tests/songs.test.mjs tests/layout.test.mjs",
+    "test": "node --test tests/engine.test.mjs tests/analyze.test.mjs tests/songs.test.mjs tests/layout.test.mjs tests/art.test.mjs",
     "test:backend": "uv run --project backend pytest -q backend/tests",
     "test:sites": "node --test tests/sites-worker.test.mjs",
     "analyze": "uv run --project backend python scripts/analyze_track.py"

@@ -46,12 +46,13 @@ export const TITLE = { x: 1256, y: 64, maxWidth: 700 };
 // 1000 units, so quarter-beat notes overlap slightly: the classic dense look.
 export const BEAT_WIDTH = 250;
 
-// The stage that fills a window of the given size.
-export function stageFor(windowWidth, windowHeight) {
+// The stage that fills a window of the given size. `touch` says the device is
+// played with fingers, as a tablet is.
+export function stageFor(windowWidth, windowHeight, { touch = false } = {}) {
   const w = Math.max(1, windowWidth);
   const h = Math.max(1, windowHeight);
-  // A phone held upright: the stage sits at the top and the drum zones take the rest.
-  if (w < 700 && h > w * 1.2) {
+  // A phone or tablet held upright: the stage sits at the top and the drum takes the rest.
+  if ((w < 700 || touch) && h > w * 1.2) {
     return { width: SAFE.width, height: SAFE.height, scale: w / SAFE.width, upright: true };
   }
   // The stage takes the window's exact shape, so not even one pixel is left over.

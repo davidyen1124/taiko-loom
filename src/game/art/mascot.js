@@ -1,6 +1,64 @@
 // Yoru, the festival tanuki. In folklore tanuki drum on their bellies, so
-// Yoru wears a drum skin on the tummy and plays along with every hit.
+// Yoru wears a drum on the tummy and plays along with every hit.
+//
+// Yoru is painted: sixteen poses cut from sheets that were all generated from
+// one reference picture (docs/art). The game picks a pose and adds the bounce.
+// The figure drawn in code below is the stand-in while the pictures load.
 import { CREAM, DON, INK, TAU, clamp, disc, ellipse, line, path, star } from './draw.js';
+import { drawSprite, hasSprite } from './sprites.js';
+
+// The painted figure's standing height, in the units the drawn one uses.
+const TALL = 236;
+
+// Which painted pose shows what Yoru is doing.
+export function poseOf({ mood = 'idle', left = 0, right = 0, kinds = {}, blink = false, leap = false, beats = 0 }) {
+  const step = Math.floor(beats);
+  if (mood === 'sad') return Math.floor(beats / 2) % 2 ? 'sad-b' : 'sad-a';
+  if (mood === 'oops') return 'oops';
+  if (mood === 'wave') return 'wave';
+  if (leap) return 'jump';
+  if (Math.max(left, right) > 0.3) {
+    const hand = left >= right ? 'left' : 'right';
+    return `${kinds[hand] === 'ka' ? 'ka' : 'don'}-${hand}`;
+  }
+  if (mood === 'balloon') return 'puff';
+  if (mood === 'happy') return step % 2 ? 'cheer-b' : 'cheer-a';
+  if (mood === 'gogo') return step % 2 ? 'dance-b' : 'dance-a';
+  return blink ? 'blink' : 'idle';
+}
+
+function sparkles(c, time) {
+  c.fillStyle = '#ffe36a'; c.strokeStyle = INK; c.lineWidth = 3;
+  const spots = [[-112, -186, 0], [116, -128, 1.3], [-108, -70, 2.4]];
+  for (const [sx, sy, phase] of spots) {
+    const s = 7 + Math.sin(time * 7 + phase) * 4;
+    c.save(); c.translate(sx, sy); star(c, 0, 0, s + 5, (s + 5) * 0.38, 4, time + phase); c.fill(); c.stroke(); c.restore();
+  }
+}
+
+function paintedMascot(c, x, y, size, pose) {
+  const { bob = 0, left = 0, right = 0, mood = 'idle', jump = 0, time = 0 } = pose;
+  const id = poseOf(pose);
+  if (!hasSprite('yoru', id)) return false;
+  const hit = Math.max(left, right);
+  // squash on the beat and on every hit, stretch on the way up
+  const squash = 1 - bob * 0.04 - hit * 0.035 + (jump > 0 ? 0.04 : 0);
+  c.save();
+  c.translate(x, y);
+  c.save();
+  c.scale(size, size);
+  c.globalAlpha = clamp(0.28 - jump / (400 * size), 0.08, 0.28);
+  ellipse(c, 0, 0, 84 - jump / (8 * size), 13, INK);
+  c.restore();
+  drawSprite(c, 'yoru', id, 0, -jump, TALL * size, { stretchX: 2 - squash, stretchY: squash });
+  if (mood === 'gogo' || mood === 'happy') {
+    c.translate(0, -jump);
+    c.scale(size, size);
+    sparkles(c, time);
+  }
+  c.restore();
+  return true;
+}
 
 const FUR = '#b36f3c';
 const FUR_DARK = '#7d4522';
@@ -85,11 +143,18 @@ function mouth(c, mood) {
 }
 
 /**
- * pose: { bob, left, right, mood, blink, jump, squash }
+ * pose: { bob, left, right, kinds, mood, blink, jump, leap, beats, time }
  *   bob     0..1 beat bounce          left/right  0..1 stick swing
- *   mood    idle | happy | sad | gogo | balloon
+ *   kinds   { left, right }: 'don' or 'ka', what each stick last played
+ *   mood    idle | happy | sad | oops | gogo | balloon | wave
+ *   leap    true while Yoru is in the air       beats  counts beats, to alternate poses
  */
 export function drawMascot(c, x, y, size, pose = {}) {
+  if (paintedMascot(c, x, y, size, pose)) return;
+  drawnMascot(c, x, y, size, { ...pose, mood: pose.mood === 'oops' ? 'sad' : pose.mood === 'wave' ? 'happy' : pose.mood });
+}
+
+function drawnMascot(c, x, y, size, pose) {
   const { bob = 0, left = 0, right = 0, mood = 'idle', blink = false, jump = 0, time = 0 } = pose;
   const squash = 1 - bob * 0.045;
   c.save();

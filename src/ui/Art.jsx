@@ -2,6 +2,7 @@
 // menus and gameplay share one set of artwork.
 import { useEffect, useRef } from 'react';
 import { useStageScale } from './Stage.jsx';
+import { onSprites } from '../game/art/sprites.js';
 
 export function Art({ width, height, draw, animate = false, className = '', label }) {
   const ref = useRef();
@@ -24,7 +25,9 @@ export function Art({ width, height, draw, animate = false, className = '', labe
     };
     paint(performance.now());
     document.fonts?.ready.then(() => paint(performance.now()));
-    return () => cancelAnimationFrame(frame);
+    // a still picture is painted again once the painted sprites have arrived
+    const forget = onSprites(() => { if (!animate) paint(performance.now()); });
+    return () => { cancelAnimationFrame(frame); forget(); };
   }, [width, height, animate, stage, draw]);
   return <canvas ref={ref} className={`art ${className}`} style={{ width, height }} role={label ? 'img' : 'presentation'} aria-label={label} />;
 }

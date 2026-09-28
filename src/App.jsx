@@ -13,6 +13,7 @@ import { audio } from './game/audio.js';
 import { FIRST_SONG, renderDemoAudio } from './game/songs/index.js';
 import { loadFonts } from './fonts.js';
 import { loadPlates } from './game/art/plates.js';
+import { loadSprites } from './game/art/sprites.js';
 import { loadAudio, loadShelf, loadSong, removeSong } from './library.js';
 import { stopPreview } from './preview.js';
 import { forgetSong, loadRecords, loadSettings, saveRecord, saveSettings } from './storage.js';
@@ -41,7 +42,7 @@ export function App() {
 
   useEffect(() => {
     loadFonts();
-    loadPlates().then(() => setPlates(true));
+    Promise.all([loadPlates(), loadSprites()]).then(() => setPlates(true));
     refresh();
     renderDemoAudio(FIRST_SONG).catch(() => {});
   }, [refresh]);
