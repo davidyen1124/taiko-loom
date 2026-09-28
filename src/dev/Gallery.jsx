@@ -13,14 +13,15 @@ const HEIGHT = 1024;
 
 function sheet(c, scale) {
   c.fillStyle = '#fff6e0'; c.fillRect(0, 0, WIDTH, HEIGHT);
-  label(c, 'LOOMI  the festival tanuki', 60, 70, { size: 40, fill: '#1a1014', stroke: null, width: 0 });
+  label(c, 'YORU  the festival tanuki', 60, 70, { size: 40, fill: '#1a1014', stroke: null, width: 0 });
   const poses = [
     ['idle', { mood: 'idle' }], ['strike', { mood: 'idle', right: 1 }], ['happy', { mood: 'happy', jump: 30 }],
     ['sad', { mood: 'sad' }], ['go-go', { mood: 'gogo', left: 1 }],
   ];
+  // each pose gets a 296-wide cell: the figure with sticks raised is 292 wide
   poses.forEach(([name, pose], i) => {
-    drawMascot(c, 170 + i * 300, 560, 1.55, { time: 0.4, ...pose });
-    label(c, name, 170 + i * 300, 620, { size: 26, align: 'center', fill: '#1a1014', stroke: null, width: 0 });
+    drawMascot(c, 176 + i * 296, 540, 1, { time: 0.4, ...pose });
+    label(c, name, 176 + i * 296, 600, { size: 26, align: 'center', fill: '#1a1014', stroke: null, width: 0 });
   });
   label(c, 'Festival friends', 60, 720, { size: 32, fill: '#1a1014', stroke: null, width: 0 });
   DANCERS.forEach((dancer, i) => {
@@ -66,7 +67,7 @@ export function Gallery() {
       else sprites(c, ratio, (now - started) / 1000);
       if (mode !== 'sheet') frame = requestAnimationFrame(paint);
     };
-    loadFonts('LOOMIthefestivaltanukiFestivalfriends').then(() => { paint(performance.now()); window.galleryReady = true; });
+    loadFonts('YORUthefestivaltanukiFestivalfriends').then(() => { paint(performance.now()); window.galleryReady = true; });
     return () => cancelAnimationFrame(frame);
   }, [mode]);
   return <canvas ref={ref} id="gallery" style={{ width: WIDTH, height: HEIGHT, display: 'block' }} />;

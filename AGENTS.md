@@ -18,8 +18,8 @@ start-up instructions when you can run it.
 1. **Never commit audio.** `.gitignore` excludes audio extensions and `backend/data/`.
    Tests synthesise their own audio. Check `git status` before every commit.
 2. **All artwork is original.** Do not add or imitate characters, sprites, logos,
-   sounds or charts from any existing game. New art that shows Loomi must match
-   `docs/art/loomi-model-sheet.png`; the checklist is in `docs/art/README.md`.
+   sounds or charts from any existing game. New art that shows Yoru must match
+   `docs/art/yoru-model-sheet.png`; the checklist is in `docs/art/README.md`.
 3. **The stage fills the window. Never letterbox it.** The design grid is 1280 x 720.
    A wider window adds columns, a taller one adds rows (`stageFor` and `setStage` in
    `src/game/layout.js`). Read sizes from `STAGE` at draw time, not at import time. In
@@ -58,7 +58,7 @@ A static host serves the game with the on-device analyser; the backend is separa
 ## Design decisions on record
 
 - Notes are drum heads seen from above with a painted swirl. They have no faces.
-- The mascot is Loomi, a tanuki who drums on a belly drum. Five festival friends
+- The mascot is Yoru, a tanuki who drums on a belly drum. Five festival friends
   (daruma, fox, lucky cat, paper lantern, rice cakes) join as the soul gauge fills.
 - Score stamps are this game's own: 灯 花 月 祭 天.
 - Painted plates carry no text. Stall lettering and lantern glow are drawn in code.

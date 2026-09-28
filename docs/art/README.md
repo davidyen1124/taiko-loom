@@ -4,11 +4,11 @@ Everything in Taiko Nights is original. Notes, the mascot, the dancers, the HUD 
 all effects are drawn in code (`src/game/art/`). Two background plates are painted
 bitmaps in `public/art/`.
 
-## Loomi, the mascot
+## Yoru, the mascot
 
-`loomi-model-sheet.png` is the reference for the character. It is rendered by the
+`yoru-model-sheet.png` is the reference for the character. It is rendered by the
 game itself (`/?gallery=sheet` in development), so the sheet and the in-game sprite
-can never drift apart. Any new artwork that shows Loomi must match it:
+can never drift apart. Any new artwork that shows Yoru must match it:
 
 - round brown tanuki with dark brown eye patches, cream muzzle, pink cheeks
 - one green leaf on the head
@@ -19,6 +19,8 @@ can never drift apart. Any new artwork that shows Loomi must match it:
 - big head, short limbs, no other clothing or accessories
 
 ## Painted plates
+
+The prompts below are recorded with the mascot's current name, Yoru (夜, night).
 
 Both were generated with the Codex `imagegen` skill, with the model sheet attached as
 the style and character reference, then checked by eye against the list above.
@@ -36,7 +38,7 @@ load, the code-drawn festival in the same file is used instead.
 
 ```text
 Use case: stylized-concept. Create festival-backdrop.png, a 3:1 landscape bitmap for the original game Taiko Nights.
-Input image: the Loomi model sheet is a STYLE REFERENCE ONLY. Match its thick uniform #1a1014 outlines, rounded shapes and perfectly flat solid-color cartoon fills. Do not reproduce its characters or lettering.
+Input image: the Yoru model sheet is a STYLE REFERENCE ONLY. Match its thick uniform #1a1014 outlines, rounded shapes and perfectly flat solid-color cartoon fills. Do not reproduce its characters or lettering.
 Draw an EMPTY Japanese summer-night festival as a straight-on, flat stage set. Upper 25%: solid indigo night sky, sparse stars, full moon at upper right, dark distant hills and pine silhouettes. Middle 50%: exactly FOUR simple food stalls with striped awnings, two on either side of a wooden yagura at the exact horizontal centre. Each stall has a completely blank colored signboard and a few simple food shapes. The yagura has red-and-white curtains and a large taiko drum on its upper platform. Cream and gold paper lanterns hang in strings from the tower toward both upper corners.
 Lower 25%: completely empty warm orange plaza, one solid flat #e0843e fill with only a few simple paving seams. Nothing stands in this quarter. Keep all standalone objects entirely inside the frame horizontally, with small side margins.
 Palette: vermilion #f2452b, cyan #4fc0d8, gold #ffd34f, cream #fff6e0, indigo #130d33, plum #35205f, orange #e0843e, brown #b36f3c.
@@ -49,8 +51,8 @@ Absolutely NO people, animals, characters, mascots, faces or anthropomorphic obj
 
 ```text
 Use case: illustration-story. Generate title-art.png, a single 16:9 landscape title-screen illustration for the original game Taiko Nights.
-Input image: Loomi's original character model sheet, the ONLY authoritative character and style reference. Reproduce the HAPPY pose in the middle of its top row extremely faithfully: same face, mouth, big head, squat torso, short capsule arms, tiny oval feet, coat and tail. Do not reproduce the sheet's words or other characters.
-Scene: Loomi joyfully plays a large separate taiko drum on a wooden stand, mid-swing, at a summer night festival. Loomi and the drum occupy the lower-right two thirds; the drum stands immediately to Loomi's viewer-left. One short arm holds a stick near the drumhead, the other short arm holds its stick raised. Full Loomi, sticks, tail, drum and stand in frame. Upper-left third is calm open indigo sky reserved for a future logo. Lantern strings across the top. Three simple fireworks at upper middle/right. Simple distant blank festival stalls and orange ground.
+Input image: Yoru's original character model sheet, the ONLY authoritative character and style reference. Reproduce the HAPPY pose in the middle of its top row extremely faithfully: same face, mouth, big head, squat torso, short capsule arms, tiny oval feet, coat and tail. Do not reproduce the sheet's words or other characters.
+Scene: Yoru joyfully plays a large separate taiko drum on a wooden stand, mid-swing, at a summer night festival. Yoru and the drum occupy the lower-right two thirds; the drum stands immediately to Yoru's viewer-left. One short arm holds a stick near the drumhead, the other short arm holds its stick raised. Full Yoru, sticks, tail, drum and stand in frame. Upper-left third is calm open indigo sky reserved for a future logo. Lantern strings across the top. Three simple fireworks at upper middle/right. Simple distant blank festival stalls and orange ground.
 Critical corrections: keep the arms as SHORT as in the reference HAPPY pose, approximately one quarter of the head width from shoulder to paw. Match the happy mouth exactly: dark burgundy open smile, pink ring along its bottom, with a small CREAM OVAL INSIDE that pink ring. The cream oval at the bottom of the mouth must be clearly visible. Do not substitute a conventional pink tongue. Follow the reference's facial proportions and clean flat rendering.
 All mandatory invariants: round brown tanuki, dark brown eye-mask patches, cream muzzle, small black nose, open smiling mouth, pink cheeks, ONE green leaf atop the head; twisted red-and-white striped headband with WHITE bow on character's LEFT (viewer's RIGHT) and RED round knot centre; open-front indigo happi coat with ONE white FOUR-POINT star on EACH side; cream belly drum skin with the reference's RED SWIRL crest; exactly TWO plain wooden drumsticks, one per paw; brown tail with darker tip; big head, short limbs. No extra clothing or accessories. Keep both stars, belly crest and tail clearly visible.
 House style: exactly the model sheet's flat vector cartoon, very thick uniform dark #1a1014 outlines, rounded shapes, flat fills with at most one simple hard-edged shade and one highlight. No painted shading, gradients, texture, airbrush glow or 3D. Palette: vermilion #f2452b, cyan #4fc0d8, gold #ffd34f, cream #fff6e0, indigo #130d33, plum #35205f, orange #e0843e, fur brown #b36f3c. Cheerful warm lantern colors and cool night sky.

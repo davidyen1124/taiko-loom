@@ -37,7 +37,7 @@ export const GAUGE = { x: 478, y: 138, width: 714, height: 24, tall: 46, segment
 
 export const SCENE_Y = 360;
 
-// Sized so the leaf on Loomi's head stays on screen at the top of a jump.
+// Sized so the leaf on Yoru's head stays on screen at the top of a jump.
 export const MASCOT = { x: 156, y: 187, size: 0.7, jump: 20 };
 
 export const TITLE = { x: 1256, y: 64, maxWidth: 700 };

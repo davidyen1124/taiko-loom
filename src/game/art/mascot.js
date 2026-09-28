@@ -1,5 +1,5 @@
-// Loomi, the festival tanuki. In folklore tanuki drum on their bellies, so
-// Loomi wears a drum skin on the tummy and plays along with every hit.
+// Yoru, the festival tanuki. In folklore tanuki drum on their bellies, so
+// Yoru wears a drum skin on the tummy and plays along with every hit.
 import { CREAM, DON, INK, TAU, clamp, disc, ellipse, line, path, star } from './draw.js';
 
 const FUR = '#b36f3c';
