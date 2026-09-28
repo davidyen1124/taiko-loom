@@ -1,10 +1,10 @@
 // Listens to a song: tempo, beat grid, bar phase, band-split attacks, loudness.
 //
-// This is the browser's counterpart of backend/src/taiko_backend/analysis.py
-// and follows the same steps: a spectrogram, percussive emphasis, attack
-// envelopes for the whole band, the kick band and the high band, a tracked
-// beat that is fitted to a steady grid when the song allows it, and a bar
-// phase chosen from bass attacks and chord changes.
+// The steps: a spectrogram, percussive emphasis, attack envelopes for the
+// whole band, the kick band and the high band, a tracked beat that is fitted
+// to a steady grid when the song allows it, a check of that tempo against the
+// tempos it is commonly mistaken for, and a bar phase chosen from bass attacks
+// and chord changes. It runs in a worker, on the player's own device.
 
 const TARGET_RATE = 22050;
 const N_FFT = 1024;
@@ -15,13 +15,17 @@ const HIGH_HZ = 2200;
 const BPM_RANGE = [85, 175];
 const BEATS_PER_MEASURE = 4;
 export const MIN_SECONDS = 5;
-export const MAX_SECONDS = 15 * 60;
+// Ten minutes of music is about 350 MB once decoded, which is what a phone can spare.
+export const MAX_SECONDS = 10 * 60;
 // A centred analysis window sees an attack before its centre reaches it, so
 // flux peaks lead the true attack. Measured in tests/analyze.test.mjs.
 const ONSET_LEAD = 0.006;
 // Tempos a beat tracker commonly confuses with the real one.
 const TEMPO_RATIOS = [1, 2 / 3, 3 / 2, 0.5, 2, 3 / 4, 4 / 3];
 const OVERRIDE_MARGIN = 1.2;
+// What a tempo loses when notes fill all three thirds of its beat: that is
+// what straight eighth notes look like when they are counted in threes.
+const THIRDS_COST = 0.4;
 
 const clamp = (value, lo, hi) => Math.min(hi, Math.max(lo, value));
 
@@ -67,7 +71,7 @@ function makeFft(size) {
   };
 }
 
-// Slaney-style mel scale, as used by the backend's filter bank.
+// Slaney-style mel scale.
 const hzToMel = hz => (hz < 1000 ? hz / (200 / 3) : 15 + Math.log(hz / 1000) / (Math.log(6.4) / 27));
 const melToHz = mel => (mel < 15 ? mel * (200 / 3) : 1000 * Math.exp((Math.log(6.4) / 27) * (mel - 15)));
 
@@ -133,7 +137,7 @@ function percussive(mel, frames) {
       let n = 0;
       for (let k = Math.max(0, m - 4); k <= Math.min(N_MELS - 1, m + 4); k++) scratch[n++] = mel[k * frames + t];
       const p = medianOf(scratch, n);
-      const h = 2 * harmonic[m * frames + t];       // the backend's margin of 2 on the percussive side
+      const h = 2 * harmonic[m * frames + t];       // a margin of 2 on the percussive side
       const mask = (p * p) / (p * p + h * h + 1e-20);
       out[m * frames + t] = mel[m * frames + t] * mask;
     }
@@ -222,7 +226,7 @@ const sampleAt = (env, time, fps) => {
   return env[i] + (env[i + 1] - env[i]) * (x - i);
 };
 
-function smooth3(env) {
+export function smooth3(env) {
   const out = new Float32Array(env.length);
   for (let i = 0; i < env.length; i++) out[i] = ((env[i - 1] ?? env[i]) + env[i] + (env[i + 1] ?? env[i])) / 3;
   return out;
@@ -346,9 +350,32 @@ function fitGrid(beats) {
   return { period, offset, steady };
 }
 
+// How alike a curve is to itself `lag` seconds later, from 0 to 1.
+function alike(env, lag, fps) {
+  const shift = lag * fps;
+  const whole = Math.floor(shift);
+  const part = shift - whole;
+  let both = 0; let here = 0; let there = 0;
+  for (let i = whole + 1; i < env.length; i++) {
+    const earlier = env[i - whole] + (env[i - whole - 1] - env[i - whole]) * part;
+    both += env[i] * earlier;
+    here += env[i] * env[i];
+    there += earlier * earlier;
+  }
+  return both / (Math.sqrt(here * there) + 1e-12);
+}
+
 // Judges the tracked tempo against its look-alikes by laying each grid over
 // the attacks. The real beat catches a drum hit on every line.
-function chooseTempo(period, env, fps, duration) {
+//
+// So can a look-alike. Steady eighth notes at 168 put a hit on every line of a
+// grid at 112 as well, and a shuffle at 100 feeds a grid at 150. Two more
+// things tell them apart:
+//   - music repeats itself two and four beats later. Counted at the wrong
+//     tempo, a shuffle does not;
+//   - a beat whose three thirds are all played is, far more often than not,
+//     three straight eighth notes of a faster beat.
+export function chooseTempo(period, env, fps, duration) {
   let chosen = null;
   for (const ratio of TEMPO_RATIOS) {
     const centre = period * ratio;
@@ -360,8 +387,16 @@ function chooseTempo(period, env, fps, duration) {
       const found = comb(env, fps, duration, candidate, everyPhase(0.008));
       if (found.score > best.score) best = { score: found.score, period: candidate, offset: found.offset };
     }
+    // the attacks a share of the way from one line to the next, against those on the lines
+    const between = share => {
+      let sum = 0; let n = 0;
+      for (let t = best.offset; t < duration; t += best.period) { sum += sampleAt(env, t + best.period * share, fps); n++; }
+      return n && best.score > 0 ? sum / n / best.score : 0;
+    };
+    const repeats = Math.max(0.05, (alike(env, 2 * best.period, fps) + alike(env, 4 * best.period, fps)) / 2);
+    const thirds = clamp(Math.min(between(1 / 3), between(2 / 3)), 0, 1);
     const prior = Math.exp(-0.5 * (Math.log2(bpm / 120) / 1.1) ** 2);
-    const weighted = (best.score * Math.sqrt(bpm) * prior) / (ratio === 1 ? 1 : OVERRIDE_MARGIN);
+    const weighted = (best.score * Math.sqrt(bpm) * prior * repeats * (1 - THIRDS_COST * thirds)) / (ratio === 1 ? 1 : OVERRIDE_MARGIN);
     if (!chosen || weighted > chosen.weighted) chosen = { weighted, period: best.period, offset: best.offset };
   }
   return chosen;
@@ -442,20 +477,25 @@ function findDownbeat(beats, low, chroma, frames, fps) {
 
 // ---- everything together --------------------------------------------------
 
-export function extract(samples, sampleRate) {
+// The attack curves of a song: all of it, its kick band and its high band.
+export function listen(samples, sampleRate) {
   const duration = samples.length / sampleRate;
-  if (duration > MAX_SECONDS) throw new AnalysisError('Choose a song shorter than 15 minutes.');
+  if (duration > MAX_SECONDS) throw new AnalysisError(`Choose a song shorter than ${MAX_SECONDS / 60} minutes.`);
   if (duration < MIN_SECONDS) throw new AnalysisError('Choose a song at least 5 seconds long.');
   const spec = spectrum(samples, sampleRate);
   if (!(spec.peak >= 1e-4)) throw new AnalysisError('This audio is silent. Try another file.');
   const { fps, frames } = spec;
-
   const drums = percussive(spec.mel, frames);
   for (let i = 0; i < drums.length; i++) drums[i] *= drums[i];       // magnitude to power
   const highFrom = spec.bank.findIndex(band => band.centre >= HIGH_HZ);
   const env = flux(drums, frames, N_MELS, 70);
   const high = flux(drums.subarray(highFrom * frames), frames, N_MELS - highFrom, 70);
   const low = flux(spec.kick, frames, 1, 50);
+  return { spec, env, high, low, fps, frames, duration };
+}
+
+export function extract(samples, sampleRate) {
+  const { spec, env, high, low, fps, frames, duration } = listen(samples, sampleRate);
 
   const first = guessTempo(smooth3(env), fps, duration);
   const tracked = trackBeats(env, fps, first);

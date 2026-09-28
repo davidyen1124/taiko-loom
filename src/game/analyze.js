@@ -1,8 +1,7 @@
 // Turns decoded audio into a playable song, entirely in the browser.
 //
 // features.js listens (tempo, beat grid, attacks per band) and charting.js
-// writes the charts. Both follow backend/src/taiko_backend step for step, so a
-// song analysed here plays like one analysed by the server.
+// writes the charts.
 
 import { AnalysisError, extract } from './features.js';
 import { generate } from './charting.js';
