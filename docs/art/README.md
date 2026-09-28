@@ -13,7 +13,7 @@ it always shows what players see.
 ## Yoru, the mascot
 
 Yoru is a festival tanuki cub who drums on a drum strapped to its belly. Any new
-picture of Yoru must match `tools/art/sheets/yoru-canonical.webp`:
+picture of Yoru must match [`yoru-canonical.webp`](yoru-canonical.webp):
 
 - big round head, about half the total height; round body; short limbs; small oval feet
 - chestnut fur, darker eye-mask patches, large dark eyes, cream muzzle and inner ears,
@@ -29,40 +29,29 @@ picture of Yoru must match `tools/art/sheets/yoru-canonical.webp`:
 Yoru is not symmetrical (bow and tail are on one side), so a pose is never mirrored
 to make its opposite. Left-hand and right-hand hits are separate paintings.
 
-## How the pictures are made
+## How the pictures were made
 
-The method is the one Codex's `hatch-pet` skill uses for animated pets, adapted to a
-game, with its `imagegen` skill doing the painting:
+With the Codex CLI: its `imagegen` skill does the painting, and the method is the one
+its `hatch-pet` skill uses for animated pets, adapted to a game.
 
-1. **One canonical picture first.** `yoru-canonical` was generated from a written
+1. **One canonical picture first.** `yoru-canonical.webp` was generated from a written
    description. Every later picture of Yoru is generated with it attached, as the
    only authority on what Yoru looks like.
 2. **Poses are generated together, on sheets.** A sheet holds six poses on a 3 by 2
-   grid. A layout guide (slots, safe area, ground line) is attached so the poses are
-   spaced evenly. Generating poses side by side is what keeps the character the same
-   size and style from pose to pose. Each sheet of Yoru opens with the canonical pose
-   again, which is how the sheets are matched to one another.
-3. **Generated pixels are never redrawn.** `tools/art/cut.py` separates each pose from
-   the transparent background, measures it, finds its anchor (the point between the
-   feet) and packs the poses into one atlas per subject.
-4. **Every result is checked by eye** on a contact sheet (`tools/art/contact.py`)
-   with all poses on a common anchor, then in the game.
+   grid, with a layout guide attached so the poses are spaced evenly. Generating
+   poses side by side is what keeps the character the same size and style from pose
+   to pose. Each sheet of Yoru opens with the canonical pose again, which is how the
+   sheets are matched to one another.
+3. **Generated pixels are never redrawn.** Each pose is separated from the
+   transparent background, measured, given its anchor (the point between the feet)
+   and packed into one atlas per subject, with a list of where each sprite sits.
+4. **Every result is checked by eye,** with all poses on a common anchor, then in
+   the game.
 
-```bash
-tools/art/generate.sh yoru-play tools/art/sheets/yoru-canonical.webp guide-3x2.png
-```
-
-```bash
-uv run --with pillow --with numpy --with scipy python tools/art/cut.py tools/art/atlases.json
-```
-
-```bash
-uv run --with pillow python tools/art/contact.py public/art/sprites/yoru.json contact.png
-```
-
-The first command needs the Codex CLI with its `imagegen` and `hatch-pet` skills. It
-works in a scratch folder and overwrites nothing. Look at the result, and if it is
-right, save it into `tools/art/sheets` as WebP at quality 95 with full-quality transparency.
+The prompts, the generated sheets and the tools that cut them are not kept in the
+repository, since the game does not need them to be built or run. They are in its
+history: `git show 30f909d:tools/art/cut.py`, and `git checkout 30f909d -- tools` brings
+the whole folder back.
 
 Two things learned the hard way:
 
@@ -75,21 +64,21 @@ Two things learned the hard way:
 
 ## What is where
 
-| In the game | Atlas or picture | Generated as | Prompt |
-| --- | --- | --- | --- |
-| Yoru: idle, blink, don and ka with either hand | `sprites/yoru` | `yoru-play` | `prompts/yoru-play.md` |
-| Yoru: dance, jump, oops, puff | `sprites/yoru` | `yoru-feel` | `prompts/yoru-feel.md` |
-| Yoru: cheer, sad, wave | `sprites/yoru` | `yoru-results` | `prompts/yoru-results.md` |
-| Daruma, fox, lucky cat: two dance poses each | `sprites/friends` | `friends-1` | `prompts/friends-1.md` |
-| Lantern, rice dumplings: two dance poses each | `sprites/friends` | `friends-2` | `prompts/friends-2.md` |
-| Don, ka, drumroll and balloon notes; the balloon | `sprites/notes` | `notes` | `prompts/notes.md` |
-| Difficulty emblems and crowns | `sprites/hud` | `icons` | `prompts/icons.md` |
-| The drum in the player's panel | `drum.webp` | `drum` | `prompts/drum.md` |
-| Title screen | `title.webp` | `title-art` | `prompts/title-art.md` |
-| Festival behind the dancers, and on the results screen | `festival.webp` | `festival-backdrop` | `prompts/festival.md` |
-| Behind the menus | `menu.webp` | `menu-backdrop` | `prompts/menu.md` |
+| In the game | Atlas or picture |
+| --- | --- |
+| Yoru: idle, blink, don and ka with either hand | `sprites/yoru` |
+| Yoru: dance, jump, oops, puff | `sprites/yoru` |
+| Yoru: cheer, sad, wave | `sprites/yoru` |
+| Daruma, fox, lucky cat: two dance poses each | `sprites/friends` |
+| Lantern, rice dumplings: two dance poses each | `sprites/friends` |
+| Don, ka, drumroll and balloon notes; the balloon | `sprites/notes` |
+| Difficulty emblems and crowns | `sprites/hud` |
+| The drum in the player's panel | `drum.webp` |
+| Title screen | `title.webp` |
+| Festival behind the dancers, and on the results screen | `festival.webp` |
+| Behind the menus | `menu.webp` |
 
-Atlases and pictures are in `public/art`; sheets and prompts are in `tools/art`.
+Atlases and pictures are in `public/art`.
 
 ## Rules
 

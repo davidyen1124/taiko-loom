@@ -24,10 +24,10 @@ start-up instructions when you can run it.
 2. **All artwork and music are original.** Do not add or imitate characters, sprites,
    logos, sounds, songs or charts from any existing game or recording. A new built-in
    song is a new composition, written as a score in `src/game/songs/`. A new picture
-   is generated as `docs/art/README.md` describes: from the canonical picture, on a
-   sheet, then cut by `tools/art/cut.py`. Generated pixels are never redrawn by hand
-   or in code, and pictures carry no writing. New art that shows Yoru must match
-   `tools/art/sheets/yoru-canonical.webp`; the checklist is in `docs/art/README.md`.
+   is generated as `docs/art/README.md` describes: from the canonical picture, with
+   poses side by side on one sheet. Generated pixels are never redrawn by hand or in
+   code, and pictures carry no writing. New art that shows Yoru must match
+   `docs/art/yoru-canonical.webp`; the checklist is in `docs/art/README.md`.
 3. **The stage fills the window. Never letterbox it.** The design grid is 1280 x 720.
    A wider window adds columns, a taller one adds rows (`stageFor` and `setStage` in
    `src/game/layout.js`). Read sizes from `STAGE` at draw time, not at import time. In
@@ -87,18 +87,17 @@ start-up instructions when you can run it.
 ## Before you commit
 
 ```bash
-npm test && npm run build && npm run test:sites
+npm test && npm run build
 ```
 
 Use Conventional Commits (`feat:`, `fix:`, `docs:`), as the history does.
 
-## Hosting hand-off
+## What belongs in the repository
 
-Keep `.openai/hosting.json`, `worker/index.js`, `scripts/prepare-sites-build.mjs` and
-`tests/sites-worker.test.mjs` intact. `npm run build` must leave
-`dist/client/index.html`, `dist/server/index.js` and `dist/.openai/hosting.json`.
-Any static host serves the whole game. GitHub Pages is published by
-`.github/workflows/pages.yml` from `dist/client`.
+The game, its tests and its documents. Nothing that the game does not need to be
+built, tested or understood: no second language, no packaging for a host that is not
+used, no scratch files. `npm run build` writes the site to `dist/`, and
+`.github/workflows/pages.yml` publishes that folder to GitHub Pages.
 
 ## Design decisions on record
 
