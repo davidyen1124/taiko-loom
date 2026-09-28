@@ -27,12 +27,13 @@ start-up instructions when you can run it.
    is generated as `docs/art/README.md` describes: from the canonical picture, on a
    sheet, then cut by `tools/art/cut.py`. Generated pixels are never redrawn by hand
    or in code, and pictures carry no writing. New art that shows Yoru must match
-   `docs/art/yoru-model-sheet.png`; the checklist is in `docs/art/README.md`.
+   `tools/art/sheets/yoru-canonical.webp`; the checklist is in `docs/art/README.md`.
 3. **The stage fills the window. Never letterbox it.** The design grid is 1280 x 720.
    A wider window adds columns, a taller one adds rows (`stageFor` and `setStage` in
    `src/game/layout.js`). Read sizes from `STAGE` at draw time, not at import time. In
    CSS, `--ox` and `--oy` say where the design grid begins and `--foot` is the curtain
-   under the festival.
+   under the festival. One exception: on a phone held sideways, while the touch drum
+   is out, the stage sits at the top and leaves a strip free under it (`reserveFor`).
 4. **Nothing may be cut off.** Outlined text that is also clipped needs padding equal
    to its outline (see the note at the top of `src/styles.css`). Canvas text that can
    be long uses `minSize` in `label()`, which shrinks and then shortens it; it is never
@@ -59,6 +60,10 @@ start-up instructions when you can run it.
    is a finger, or once the screen has been touched, and never for a mouse. Every
    touch plays something: the skin is don, everything else is ka. Its geometry lives
    in `src/game/touchDrum.js` and is tested; the painted skin is 69% of the drum.
+   **The head of the drum never reaches the bottom edge.** A phone keeps a strip
+   there for its own gestures (`env(safe-area-inset-bottom)`, read by
+   `src/ui/safeArea.js`); the head ends at least 16 px above it. The HUD likewise
+   keeps clear of a notch at either end (`STAGE.left`, `STAGE.right`).
 11. **Built-in songs are synthesised in plain JavaScript,** not with the Web Audio
    graph, which took 10 to 28 seconds a song in Chrome and Safari. `npm test` renders
    every song and checks its level, its tuning and that it is in time with its chart.

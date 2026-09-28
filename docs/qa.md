@@ -8,7 +8,7 @@ server and a local backend. Viewports: 1280 x 720, 844 x 390 (phone, sideways) a
 
 | Suite | Command | Result |
 | --- | --- | --- |
-| Rules engine, browser analyser, built-in songs, stage layout and artwork | `npm test` | 52 passed |
+| Rules engine, browser analyser, built-in songs, stage layout and artwork | `npm test` | 54 passed |
 | Backend analysis, charting and API | `npm run test:backend` | 29 passed |
 | Hosting worker and build output | `npm run build && npm run test:sites` | 4 passed |
 
@@ -98,6 +98,10 @@ the development build and the static build served under `/taiko-nights/`.
 | Touch drum | Two fingers together play both hands | Pass |
 | Touch drum | Pause button is not a drum hit; the drum steps aside while paused | Pass |
 | Touch drum | Sideways it never covers the lane; upright it never runs off the screen | Pass after fix 24, automated |
+| Touch drum | With an iPhone's safe areas (21 px below, 47 px at each end): head ends 51 px above the bottom edge | Pass after fix 26 |
+| Touch drum | iPhone SE and a 915 x 412 Android phone, which keep no strip: head ends 29 and 30 px above the edge | Pass after fix 26 |
+| Notch | Score, pause button, gauge, title and song select arrows keep clear of both ends | Pass after fix 26 |
+| Home screen | Manifest and icons are served; the page asks to open full screen | Pass |
 | Touch drum | Festival friends line up behind the drum instead of under it | Pass |
 | Cut-off text | Audit on title, shelf, each song, help, settings and add dialogs at seven window shapes: 98 screens | Pass |
 | Whole site | The 35 end-to-end checks of the static build, in both browsers | Pass, 70 of 70 |
@@ -173,6 +177,11 @@ Causes and fixes:
     sized to the space it has, and a tablet held upright gets the stage at the top.
 25. **Generated sheets looked as if they had a murky background.** They did not: the
     colour sits under fully transparent pixels. Transparency is now measured.
+26. **The touch drum was played on the edge of the display.** Its widest part met the
+    bottom edge, which is where an iPhone listens for the swipe that leaves the game.
+    Reported from a real iPhone. The stage now moves up and is shorter while the drum
+    is out, the whole head of the drum sits above the strip the phone keeps, and only
+    the barrel reaches the edge. The HUD also keeps clear of the notch.
 
 The audit measures each text's letters, grows that box by half the outline width, and
 tests it against every ancestor that clips. It switches animations off while it
@@ -184,9 +193,12 @@ measures, so a panel that is still sliding open is judged by where it ends up.
   view. Animation was therefore judged from stepped frames (below) rather than by
   watching it in motion. Smoothness on a real display was not measured.
 - WebKit was tested through Playwright, not Safari itself. Firefox and physical
-  phones were not tested. The touch drum was played with emulated touches, which
+  phones were not tested here. The touch drum was played with emulated touches, which
   say nothing about how it feels under real thumbs or how late a phone's screen and
   speaker are. Use the timing offset in Settings.
+- The test browsers report no safe areas. An iPhone's were put in by hand (the
+  numbers an iPhone 14 reports), so the layout is checked but the device's own
+  gestures are not.
 - Drawing smoothness was measured without a graphics card. On a real display it was
   not measured.
 - The pictures were judged by one pair of eyes. Whether Yoru is appealing is for
