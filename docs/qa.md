@@ -54,7 +54,9 @@ server and a local backend. Viewports: 1280 x 720, 844 x 390 (phone, sideways) a
 
 Tested on 2026-09-27 with Playwright driving headless Chromium and WebKit (Safari's
 engine) against `npm run preview:pages`, which serves the static build under
-`/taiko-nights/` as GitHub Pages does. 35 checks in each browser, all passing.
+`/taiko-nights/` as GitHub Pages does. 35 checks in each browser, all passing. The
+same checks were run again against https://davidyen1124.github.io/taiko-nights/ once
+it was published: 70 of 70.
 
 | Area | What was done | Result |
 | --- | --- | --- |
