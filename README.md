@@ -53,6 +53,10 @@ repo and the site carry no audio files and nothing is sampled from a recording.
 
 ## Play
 
+How to play opens by itself before your first song, and from the question mark on
+the song shelf after that. It shows the four keys on a desktop and the four zones of
+the display on a phone, and either can be tried out there.
+
 | Key | Drum |
 | --- | --- |
 | `F` `J` | ドン Don, the skin (red notes) |

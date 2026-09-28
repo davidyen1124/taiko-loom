@@ -159,8 +159,6 @@ kbd.ka { background: var(--ka); color: var(--ink); }
 .title-keys li { display: flex; align-items: center; gap: 8px; padding: 6px 14px 6px 7px; border: 3px solid var(--ink); border-radius: 16px; background: rgba(26, 16, 20, .78); font-size: 17px; }
 .title-keys .don kbd { background: var(--don); color: #fff; }
 .title-keys .ka kbd { background: var(--ka); }
-.title-status { position: absolute; left: calc(var(--ox) * .5 + 64px); top: calc(var(--oy) + 672px); z-index: 1; display: flex; align-items: center; gap: 9px; font-size: 14px; color: #f0e2ec; text-shadow: 0 2px 0 var(--ink); }
-.title-status i { width: 10px; height: 10px; border-radius: 50%; background: #6fd3ff; }
 
 /* ---- song select ---------------------------------------------------- */
 
@@ -287,17 +285,33 @@ kbd.ka { background: var(--ka); color: var(--ink); }
 .calibrate .tap { background: var(--gold); }
 
 .dialog.help { width: 1040px; }
+.dialog.help .dialog-body { gap: 11px; padding-top: 18px; padding-bottom: 20px; }
 .help-lead { font-size: 18px; font-weight: 800; }
-.help-columns { display: grid; grid-template-columns: 1fr 340px; gap: 16px; }
+/* the drum: four keys on a desktop, four zones of the display on a phone */
+.help-pads { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+.help-pad { display: grid; grid-template-columns: 56px auto; grid-template-rows: auto auto; align-items: center; justify-content: center; column-gap: 12px; height: 104px; border: 4px solid var(--ink); border-radius: 18px; background: #ffe0d8; color: var(--text); box-shadow: 0 5px 0 var(--ink); }
+.help-pad.ka { background: #d3f1f8; }
+.help-pad .art { grid-row: 1 / 3; }
+.help-pad strong { align-self: end; font: 400 27px/1.1 var(--display); color: var(--don-deep); }
+.help-pad.ka strong { color: var(--ka-deep); }
+.help-pad small { align-self: start; font-size: 13.5px; font-weight: 800; color: var(--muted); }
+.help-pad kbd { align-self: start; justify-self: start; min-width: 38px; height: 34px; font-size: 19px; }
+/* zones sit side by side, as they do on the display */
+.help-pads.zones { gap: 0; border: 4px solid var(--ink); border-radius: 20px; overflow: hidden; box-shadow: 0 5px 0 var(--ink); }
+.help-pads.zones .help-pad { border: 0; border-radius: 0; box-shadow: none; }
+.help-pads.zones .help-pad + .help-pad { border-left: 3px solid var(--ink); }
+.help-how { font-size: 15.5px; line-height: 1.4; }
+.help-how b { font-family: var(--display); font-weight: 400; }
+.help-columns { display: grid; grid-template-columns: 1fr 340px; gap: 14px; }
 .help-notes { display: grid; gap: 7px; align-content: start; }
-.help-notes li { display: grid; grid-template-columns: 60px 176px 1fr; align-items: center; gap: 12px; height: 64px; padding: 0 16px 0 8px; border-radius: 16px; background: #f6ead2; font-size: 15px; line-height: 1.35; }
+.help-notes li { display: grid; grid-template-columns: 60px 176px 1fr; align-items: center; gap: 12px; height: 72px; padding: 0 16px 0 8px; border-radius: 16px; background: #f6ead2; font-size: 15px; line-height: 1.35; }
 .help-notes li .art { justify-self: center; }
 .help-notes strong { font-size: 18px; font-weight: 900; white-space: nowrap; }
 .help-notes kbd, .help-keys kbd { min-width: 28px; height: 28px; font-size: 14px; box-shadow: 0 2px 0 var(--ink); margin: 0 2px; }
 .help-tips { display: grid; gap: 7px; align-content: start; }
-.help-tips div { min-height: 79px; padding: 9px 16px; border: 3px solid var(--ink); border-radius: 16px; background: #fff; }
-.help-tips h3 { font-size: 16px; font-weight: 900; color: var(--don-deep); }
-.help-tips p { font-size: 13.5px; line-height: 1.4; }
+.help-tips div { height: 72px; padding: 7px 16px; border: 3px solid var(--ink); border-radius: 16px; background: #fff; }
+.help-tips h3 { font-size: 15px; font-weight: 900; color: var(--don-deep); }
+.help-tips p { font-size: 13px; line-height: 1.35; }
 .help-tips b { font-family: var(--display); font-weight: 400; }
 .help-tips b.good { color: #e07a00; }
 .help-tips b.ok { color: #3f6f9c; }

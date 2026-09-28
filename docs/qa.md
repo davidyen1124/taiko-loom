@@ -68,7 +68,6 @@ it was published: 70 of 70.
 | Loading | No console errors, no missing files, artwork and icon load from the sub-path | Pass |
 | Loading | Every request stays inside the site folder; nothing asks for `/api` | Pass |
 | Loading | No audio file is downloaded at any point | Pass |
-| Title | Status reads "analysed in your browser", never "offline" | Pass |
 | Song select | Three built-in songs, each with its own colour, 3 charts each | Pass |
 | Play | Raijin Rush on Hard in auto play: 456 of 456 良, no misses, over 1,000,000 | Pass |
 | Play | A built-in song is ready within 0.2 s of choosing it | Pass |
@@ -136,6 +135,9 @@ from the home screen, with its safe areas put in by hand), 667 x 375 (iPhone SE)
 | Sky band | Yoru stands clear of the pause button, which is 44 px across on a phone | Pass, automated |
 | Upright | A phone or tablet held upright is asked to turn. Turned in the middle of a song, the song pauses; turned back, the pause menu is waiting | Pass |
 | Keys | Names of keys are not shown on a device played with fingers; How to play explains the zones instead | Pass |
+| How to play | Opens before the first song in both browsers, with four keys at 1280 x 720 and 1024 x 768 and four zones at 844 x 291 and 844 x 390; fits without scrolling | Pass |
+| How to play | A pad sounds when tapped, clicked or played with its key; the song starts from Start and from the close button | Pass |
+| How to play | Does not open before the second song, in auto play, or once it has been read from the question mark | Pass |
 | Title | Yoru's head is whole on a window as wide as 844 x 291 (the feet are not) | Pass after fix 31 |
 | Desktop | Play screen at 1280 x 720, 1862 x 1017, 1024 x 768 and 2560 x 1080 compared pixel by pixel with the version before: identical but for the judgement word of fix 30 | Pass |
 | Whole site | The 36 end-to-end checks of the static build, in both browsers | Pass, 72 of 72 |

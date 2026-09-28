@@ -16,7 +16,7 @@ import { loadPlates } from './game/art/plates.js';
 import { loadSprites } from './game/art/sprites.js';
 import { loadAudio, loadShelf, loadSong, removeSong } from './library.js';
 import { stopPreview } from './preview.js';
-import { forgetSong, loadRecords, loadSettings, saveRecord, saveSettings } from './storage.js';
+import { forgetSong, hasSeen, loadRecords, loadSettings, markSeen, saveRecord, saveSettings } from './storage.js';
 import './styles.css';
 
 export function App() {
@@ -24,7 +24,7 @@ export function App() {
   const [songs, setSongs] = useState([]);
   const [settings, setSettings] = useState(loadSettings);
   const [records, setRecords] = useState(loadRecords);
-  const [dialog, setDialog] = useState(null);           // settings | help | upload
+  const [dialog, setDialog] = useState(null);           // settings | help | first | upload
   const [loading, setLoading] = useState(null);         // { title, progress }
   const [error, setError] = useState('');
   const [session, setSession] = useState(null);         // { song, buffer, difficulty }
@@ -70,7 +70,9 @@ export function App() {
       played.current = settings;
       setSession({ song, buffer, difficulty });
       setResult(null);
-      setScreen('play');
+      // the first song waits until the player has been shown how to play
+      if (!settings.auto && !hasSeen('help')) setDialog('first');
+      else setScreen('play');
     } catch (failure) {
       setError(failure.message || 'This song could not be loaded.');
       refresh();
@@ -136,7 +138,8 @@ export function App() {
       )}
 
       {dialog === 'settings' && <SettingsDialog settings={settings} onChange={setSettings} onClose={() => setDialog(null)} />}
-      {dialog === 'help' && <HelpDialog onClose={() => setDialog(null)} />}
+      {dialog === 'help' && <HelpDialog onClose={() => { markSeen('help'); setDialog(null); }} />}
+      {dialog === 'first' && <HelpDialog first onClose={() => { markSeen('help'); setDialog(null); setScreen('play'); }} />}
       {dialog === 'upload' && <UploadDialog onClose={() => setDialog(null)} onAdded={added} />}
 
       {loading && (
