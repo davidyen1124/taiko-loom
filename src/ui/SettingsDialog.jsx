@@ -87,7 +87,7 @@ export function SettingsDialog({ settings, onChange, onClose }) {
       <Slider id="set-speed" icon={Gauge} label="Note speed" hint="Spreads notes out. The music is unchanged." value={settings.speed} display={`×${settings.speed.toFixed(1)}`} {...LIMITS.speed} onChange={value => set('speed', Math.round(value * 10) / 10)} />
       <Slider id="set-offset" icon={Timer} label="Timing offset" hint="Raise it if good hits are judged late (Bluetooth, TVs)." value={settings.offset} display={`${settings.offset > 0 ? '+' : ''}${settings.offset} ms`} {...LIMITS.offset} onChange={value => set('offset', value)} />
       <Calibrate onResult={value => set('offset', value)} />
-      <Toggle id="set-auto" icon={Bot} label="Auto play" hint="Loomi plays for you. Scores are not saved." value={settings.auto} onChange={value => set('auto', value)} />
+      <Toggle id="set-auto" icon={Bot} label="Auto play" hint="Yoru plays for you. Scores are not saved." value={settings.auto} onChange={value => set('auto', value)} />
       <Toggle id="set-guide" icon={Hand} label="Touch guide" hint="Show the four drum zones on touch screens." value={settings.guide} onChange={value => set('guide', value)} />
       <footer className="dialog-foot">
         <button className="button ghost" onClick={() => onChange({ ...DEFAULT_SETTINGS })}><RotateCcw size={18} strokeWidth={3} />Reset</button>

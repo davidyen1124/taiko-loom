@@ -23,7 +23,7 @@ export function NoteIcon({ type, size = 64 }) {
   return <Art width={size} height={size} draw={draw} />;
 }
 
-// Loomi in a box of his own. The figure is drawn at 1/300 of the box per
+// Yoru in a box of their own. The figure is drawn at 1/300 of the box per
 // unit, which leaves room for raised sticks, the tail and a jump.
 export function Mascot({ size = 200, mood = 'idle', bpm = 120, drumming = false }) {
   const draw = useCallback((c, time) => {
@@ -36,7 +36,7 @@ export function Mascot({ size = 200, mood = 'idle', bpm = 120, drumming = false 
       jump: mood === 'happy' ? Math.abs(Math.sin(beats * Math.PI)) * size * 0.06 : 0,
     });
   }, [size, mood, bpm, drumming]);
-  return <Art width={size} height={size} draw={draw} animate label="Loomi the tanuki" />;
+  return <Art width={size} height={size} draw={draw} animate label="Yoru the tanuki" />;
 }
 
 const CROWNS = {

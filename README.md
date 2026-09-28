@@ -9,7 +9,7 @@ beat and writes Easy, Medium and Hard charts, and you play it with four keys.
 | --- | --- |
 | ![Drumroll with its hit counter](docs/screens/play-drumroll.webp) | ![Balloon note with hits remaining](docs/screens/play-balloon.webp) |
 
-Everything here is original: the code, the mascot (Loomi the tanuki), the festival
+Everything here is original: the code, the mascot (Yoru the tanuki), the festival
 friends, the notes and the built-in song. See [docs/art](docs/art/README.md).
 
 The game fills the window at any shape, with no bars. A wider window makes the lane
