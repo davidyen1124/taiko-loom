@@ -1,9 +1,55 @@
-# Prototype Instructions
+# Taiko Nights: notes for contributors and coding agents
 
-Run the local server yourself and open the preview in the browser available to this environment. Do not give the user server-start instructions when you can run it.
+## Working on it
 
-Before making substantial visual changes, use the Product Design plugin's `get-context` skill when the visual source is unclear or no longer matches the current goal. When the user gives durable prototype-specific design feedback, preferences, or decisions, record them in `AGENTS.md`.
+Run the servers yourself and look at the result in a browser. Do not hand the user
+start-up instructions when you can run it.
 
-When implementing from a selected generated mock, treat that image as the source of truth for layout, component anatomy, density, spacing, color, typography, visible content, and hierarchy.
+- `npm run api` starts the analysis backend on port 8000 (FastAPI, managed by uv).
+- `npm run dev -- --port 4173` starts the game. `/api` is proxied to the backend.
+- `/?gallery` shows every sprite. `/?gallery=sheet` renders the character model sheet.
+- In development `window.__taiko` exposes `{ renderer, game, audio }` while a song is
+  playing, so a run can be stepped frame by frame. `docs/qa.md` shows how.
 
-Build app UI in `src/`. Keep `.openai/hosting.json`, `worker/index.js`, `scripts/prepare-sites-build.mjs`, and `tests/sites-worker.test.mjs` intact so the same local prototype can be handed to Sites. Before a Sites handoff, run `npm run build` and `npm run test:sites`; the build must leave `dist/client/index.html`, `dist/server/index.js`, and `dist/.openai/hosting.json`.
+## Rules that must hold
+
+1. **Never commit audio.** `.gitignore` excludes audio extensions and `backend/data/`.
+   Tests synthesise their own audio. Check `git status` before every commit.
+2. **All artwork is original.** Do not add or imitate characters, sprites, logos,
+   sounds or charts from any existing game. New art that shows Loomi must match
+   `docs/art/loomi-model-sheet.png`; the checklist is in `docs/art/README.md`.
+3. **The stage is 1280 x 720.** Every position lives in `src/game/layout.js` or in
+   stage units in `src/styles.css`. The stage scales as a whole; nothing should depend
+   on the window size.
+4. **Rules stay out of the renderer.** `src/game/engine.js` takes the song time as an
+   argument and has no timers, audio or drawing, which is what makes it testable.
+   Numbers belong in `src/game/rules.js`.
+5. **Menus read live state.** Key handlers read from a ref updated during render, so
+   two keys pressed in quick succession never act on a stale screen. Hover selection
+   follows real pointer movement only.
+6. **Both analysers share one chart format** (`version: 2`). If you change it, change
+   `backend/src/taiko_backend/charting.py`, `src/game/analyze.js` and
+   `src/game/demoSong.js` together.
+
+## Before you commit
+
+```bash
+npm test && npm run test:backend && npm run build && npm run test:sites
+```
+
+Use Conventional Commits (`feat:`, `fix:`, `docs:`), as the history does.
+
+## Hosting hand-off
+
+Keep `.openai/hosting.json`, `worker/index.js`, `scripts/prepare-sites-build.mjs` and
+`tests/sites-worker.test.mjs` intact. `npm run build` must leave
+`dist/client/index.html`, `dist/server/index.js` and `dist/.openai/hosting.json`.
+A static host serves the game with the on-device analyser; the backend is separate.
+
+## Design decisions on record
+
+- Notes are drum heads seen from above with a painted swirl. They have no faces.
+- The mascot is Loomi, a tanuki who drums on a belly drum. Five festival friends
+  (daruma, fox, lucky cat, paper lantern, rice cakes) join as the soul gauge fills.
+- Score stamps are this game's own: 灯 花 月 祭 天.
+- Painted plates carry no text. Stall lettering and lantern glow are drawn in code.

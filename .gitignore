@@ -19,3 +19,8 @@ backend/data/
 *.opus
 *.wma
 *.aiff
+
+# Tooling
+.pytest_cache/
+.ruff_cache/
+*.egg-info/
