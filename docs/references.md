@@ -10,7 +10,7 @@ How the notes were used:
 - **Layout conventions** (Part 2) set where the lane, target, gauge and player panel sit.
 - **Rules and numbers** (Part 3) set the timing windows, gauge thresholds and scoring in
   `src/game/rules.js`, and the per-difficulty charting habits in
-  `backend/src/taiko_backend/charting.py`.
+  `src/game/charting.js`.
 - Where this game differs on purpose, `README.md` says so under "Rules".
 
 Research date: 2026-09-27. Purpose: layout conventions and rule parity for an original taiko-style browser rhythm game (own art, own characters, own code). Nothing here is meant to be copied as an asset; screenshots and sprite pages are for looking, not for reuse.
