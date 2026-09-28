@@ -1,11 +1,13 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { analyze } from '../src/game/analyze.js';
+import { extract } from '../src/game/features.js';
+import { detectFeel, loudThreshold, quantile, roundEven } from '../src/game/charting.js';
 import { Game } from '../src/game/engine.js';
 
 const RATE = 22050;
 
-function drumLoop(bpm, offset, seconds, RATE = 22050) {
+function drumLoop(bpm, offset, seconds, RATE = 22050, { swing = false } = {}) {
   const samples = new Float32Array(Math.floor(seconds * RATE));
   const beat = 60 / bpm;
   let seed = 7;
@@ -19,19 +21,50 @@ function drumLoop(bpm, offset, seconds, RATE = 22050) {
     const loud = Math.floor(b / 32) % 2 ? 1 : 0.5;
     if (b % 2 === 0) put(time, t => Math.sin(2 * Math.PI * (55 + 90 * Math.exp(-t * 30)) * t) * Math.exp(-t * 18), 0.18, loud);
     else put(time, t => random() * Math.exp(-t * 28), 0.14, loud * 0.7);
-    put(time + beat / 2, t => random() * Math.exp(-t * 90), 0.04, loud * 0.25);
+    put(time + beat * (swing ? 2 / 3 : 0.5), t => random() * Math.exp(-t * 90), 0.04, loud * 0.25);
   }
   return samples;
 }
+
+// distance from each beat to the nearest true beat
+const drift = (beats, offset, period) => beats.map(t => ((t - offset + period * 100.5) % period) - period / 2);
 
 test('finds the tempo and places beats on the real attacks', () => {
   for (const [bpm, offset] of [[120, 0.25], [96, 0.1], [150, 0.4]]) {
     const song = analyze(drumLoop(bpm, offset, 64), RATE);
     assert.ok(Math.abs(song.bpm - bpm) < 0.3, `${bpm} BPM was read as ${song.bpm}`);
-    const period = 60 / bpm;
-    const worst = Math.max(...song.beats.slice(0, 60).map(t => Math.abs(((t - offset + period / 2) % period) - period / 2)));
-    assert.ok(worst < 0.02, `${bpm} BPM beats drift by ${Math.round(worst * 1000)} ms`);
+    const worst = Math.max(...drift(song.beats, offset, 60 / bpm).map(Math.abs));
+    assert.ok(worst < 0.006, `${bpm} BPM beats drift by ${Math.round(worst * 1000)} ms`);
   }
+});
+
+test('beats are not early or late on average', () => {
+  // the Hard window is 25 ms either side, so a few milliseconds of bias matter
+  for (const [bpm, offset, rate] of [[138, 0.33, 44100], [100, 0.5, 44100], [165, 0.2, 48000]]) {
+    const { beats, bpm: read } = extract(drumLoop(bpm, offset, 48, rate), rate);
+    assert.ok(Math.abs(read - bpm) < 0.3, `${bpm} BPM was read as ${read}`);
+    const errors = drift(beats, offset, 60 / bpm);
+    const mean = errors.reduce((sum, v) => sum + v, 0) / errors.length;
+    assert.ok(Math.abs(mean) < 0.004, `${bpm} BPM beats are ${(mean * 1000).toFixed(1)} ms off on average`);
+  }
+});
+
+test('hears a shuffle and charts it in triplets', () => {
+  const straight = extract(drumLoop(120, 0.25, 48), RATE);
+  const swung = extract(drumLoop(120, 0.25, 48, RATE, { swing: true }), RATE);
+  assert.equal(detectFeel(straight), 4);
+  assert.equal(detectFeel(swung), 3);
+  assert.equal(analyze(drumLoop(120, 0.25, 48, RATE, { swing: true }), RATE).feel, 'shuffle');
+});
+
+test('chart maths match the backend', () => {
+  assert.deepEqual([0.5, 1.5, 2.5, 3.5].map(v => roundEven(v)), [0, 2, 2, 4]);   // Python rounds halves to even
+  assert.equal(roundEven(1.23456, 2), 1.23);
+  assert.equal(quantile([1, 2, 3, 4], 0.5), 2.5);           // numpy's linear interpolation
+  assert.equal(quantile([5], 0.9), 5);
+  // two clear groups of bars: the threshold falls between them
+  const threshold = loudThreshold([-30, -29, -31, -30, -12, -11, -13, -12]);
+  assert.ok(threshold > -29 && threshold < -13, `threshold ${threshold}`);
 });
 
 test('timing is right at every common sample rate', () => {
@@ -41,9 +74,8 @@ test('timing is right at every common sample rate', () => {
     const song = analyze(drumLoop(112, 0.35, 36, rate), rate);
     assert.ok(Math.abs(song.bpm - 112) < 0.3, `${rate} Hz: 112 BPM was read as ${song.bpm}`);
     assert.ok(Math.abs(song.duration - 36) < 0.01, `${rate} Hz: duration ${song.duration}`);
-    const period = 60 / 112;
-    const worst = Math.max(...song.beats.map(t => Math.abs(((t - 0.35 + period * 100.5) % period) - period / 2)));
-    assert.ok(worst < 0.02, `${rate} Hz: beats drift by ${Math.round(worst * 1000)} ms`);
+    const worst = Math.max(...drift(song.beats, 0.35, 60 / 112).map(Math.abs));
+    assert.ok(worst < 0.006, `${rate} Hz: beats drift by ${Math.round(worst * 1000)} ms`);
   }
 });
 
